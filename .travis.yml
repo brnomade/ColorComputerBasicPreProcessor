@@ -4,3 +4,4 @@ python:
   - "3.7"
 script:
   - python -m unittest tests/test_process_procedure_declaration.py
+  - python -m unittest tests/test_remove_empty_lines.py
