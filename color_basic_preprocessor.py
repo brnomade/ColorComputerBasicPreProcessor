@@ -108,15 +108,6 @@ def initialise_script_configuration_parser():
     return config
 
 
-def remove_empty_lines(an_input_file_name, an_output_file_name):
-    output_file_handler = open(an_output_file_name, "w")
-    with open(an_input_file_name, "r") as input_file_handler:
-        for a_line in input_file_handler:
-            if a_line.strip() != "":
-                output_file_handler.write(a_line)
-    output_file_handler.close()
-
-
 def execute_bpp(an_input_file_name, an_output_file_name):
     # execute bpp
     os_command = "bpp.exe" + " " + an_input_file_name
@@ -198,6 +189,19 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name):
                             a_new_line = a_new_line.rstrip(glb_colon_symbol)
                             output_file_handler.write(a_new_line)
                             output_file_handler.write(glb_new_line_symbol)
+    output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
+
+
+def remove_empty_lines(an_input_file_name, an_output_file_name):
+    error_list = list()
+    output_file_handler = open(an_output_file_name, "w")
+    with open(an_input_file_name, "r") as input_file_handler:
+        for a_line in input_file_handler:
+            if a_line.strip() != glb_empty_symbol:
+                output_file_handler.write(a_line)
     output_file_handler.close()
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
