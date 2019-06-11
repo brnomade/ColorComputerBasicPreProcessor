@@ -401,9 +401,7 @@ def final_pass(an_input_file_name, an_output_file_name):
     output_file_handler.close()
 
 
-if __name__ == "__main__":
-    # execute only if run as a script
-
+def main():
     # Script starts
     input_arguments = initialise_script_arguments_parser().parse_args()
     configuration = initialise_script_configuration_parser()
@@ -474,3 +472,8 @@ if __name__ == "__main__":
         input_filename = output_filename
         output_filename = input_arguments.output_file
         final_pass(input_filename, output_filename)
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    main()
