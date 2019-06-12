@@ -1,8 +1,7 @@
 import unittest
-from color_basic_preprocessor import remove_empty_lines
+from color_basic_preprocessor import remove_empty_lines, glb_new_line_symbol
 import os
 
-glb_new_line_symbol = "\n"
 glb_input_filename = "unit_test_input.txt"
 glb_output_filename = "unit_test_output.txt"
 
@@ -27,7 +26,7 @@ def print_file(a_file_name):
 class TestRemoveEmptyLines(unittest.TestCase):
 
     def setUp(self):
-        print(' setUp - nothing to setup')
+        print(' ', type(self).__name__, '- setUp - nothing to setup')
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
