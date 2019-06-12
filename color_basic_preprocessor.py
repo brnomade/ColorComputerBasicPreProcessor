@@ -42,6 +42,9 @@ for counter in range(0, glb_max_available_parameters_for_procedures):
     glb_available_procedure_numeric_parameters.append(glb_available_numeric_references.pop())
     glb_available_procedure_string_parameters.append(glb_available_string_references.pop())
 #
+glb_keyword_goto = "GOTO"
+glb_keyword_declare = "DECLARE"
+#
 glb_empty_symbol = ""
 glb_comment_symbol = "'"
 glb_space_symbol = " "
@@ -69,7 +72,18 @@ glb_error_messages = ["no errors found",
                       "duplicate GOTO/GOSUB reference name found.",
                       "missing terminator for GOTO/GOSUB reference name.",
                       "missing line number before GOTO/GOSUB reference.",
-                      "GOTO/GOSUB reference name contains invalid character."]
+                      "GOTO/GOSUB reference name contains invalid character.",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "Multiple GOTO statements in a single line found.",
+                      "GOTO reference undefined.",
+                      "GOTO reference unknown.",
+                      "missing prefix for GOTO reference name."]
+
 # DECLARE related error codes
 glb_error_declare_multiple = 1
 glb_error_declare_missing_definition = 2
@@ -78,11 +92,19 @@ glb_error_declare_missing_closing_parenthesis = 4
 glb_error_declare_parameters_exceeded = 5
 glb_error_declare_duplicate_definition = 6
 glb_error_declare_contains_invalid_character = 7
-# GOTO / GOSUB related errror codes
+
+# GOTO / GOSUB definition related error codes
 glb_error_gotogosub_duplicate_reference = 10
 glb_error_gotogosub_missing_terminator = 11
 glb_error_gotogosub_missing_line_number = 12
 glb_error_gotogosub_contains_invalid_character = 13
+
+# GOTO resolution related error codes
+glb_error_goto_multiple_found = 20
+glb_error_goto_undefined_reference = 21
+glb_error_goto_unknown_reference = 22
+glb_error_goto_missing_prefix = 23
+
 #
 glb_reference_dictionary = dict()
 glb_reference_dictionary["declares"] = dict()
@@ -171,7 +193,7 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
             line_number = line_number + 1
-            declare_count = a_line.count("DECLARE")
+            declare_count = a_line.count(glb_keyword_declare)
             if declare_count == 0:
                 output_file_handler.write(a_line)
             elif declare_count > 1:
@@ -179,7 +201,7 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                 output_file_handler.write(a_line)
                 present_error_message(a_line, line_number, glb_error_declare_multiple)
             else:
-                a_line_split = a_line.rpartition("DECLARE")
+                a_line_split = a_line.rpartition(glb_keyword_declare)
                 if glb_comment_symbol in a_line_split[0]:
                     # TODO - potential parameter - remove commented line from output
                     output_file_handler.write(a_line)
@@ -314,32 +336,50 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
     # scenario 08 -> NO ACTION -> 10 ' whatever GOTO whatever
     # scenario 09 -> VALID -> 10 SOME CODE: GOTO _somewhere 'A COMMENT
     # scenario 10 -> INVALID -> 10 SOME CODE: GOTO somewhere: GOTO somewhere else
+    # scenario 11 -> VALID -> 10 SOME CODE:  GOTO somewhere: SOME MORE CODE HERE
+    line_number = 0
+    error_list = list()
+    #
     output_file_handler = open(an_output_file_name, "w")
-    line_number = 1
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
-            if "GOTO" in a_line:
-                a_line_splitted = a_line.rpartition("GOTO")
-                if "'" in a_line_splitted[0]:
-                    # scenario 8
-                    print("line", line_number, "- commented line - skipping.")
-                elif a_line.count("GOTO") > 1:
-                    # scenario 10
-                    print("syntax error - line", line_number, "Multiple GOTO statements in a single line found.", a_line)
-                elif a_line_splitted[2].strip() == "":
-                    # scenario 6
-                    print("syntax error - line", line_number, "GOTO reference missing.", a_line)
+            if glb_keyword_goto in a_line:
+                if glb_comment_symbol in a_line:
+                    # identify if the GOTO keyword is located to the left of the comment symbol. i.e.: 10 GOTO 20 '
+                    position_of_comment_symbol = a_line.find(glb_comment_symbol)
+                    a_line_split = a_line[0: position_of_comment_symbol]
+                    # print("comment found",position_of_comment_symbol,a_line_split)
                 else:
-                    a_reference_name = a_line_splitted[2].strip().split(" ")[0]
-                    if a_reference_name in a_reference_dictionary:
-                        # scenarios 1, 2, 3, 4, 5 and 9.
-                        a_line = a_line.replace(a_reference_name, str(a_reference_dictionary[a_reference_name]))
+                    a_line_split = a_line
+                if a_line_split.count(glb_keyword_goto) > 1:
+                    # scenario 10
+                    error_list.append(glb_error_goto_multiple_found)
+                    output_file_handler.write(a_line)
+                    present_error_message(a_line, line_number, glb_error_goto_multiple_found)
+                elif a_line_split.count(glb_keyword_goto) == 1:
+                    result = re.search("GOTO(.+?):", a_line_split)
+                    if result:
+                        a_reference_name = result.group(1).strip() + glb_colon_symbol
+                        print(a_reference_name)
+                        if a_reference_name in a_reference_dictionary["gotogosub"].keys():
+                            # scenarios 1, 2, 3, 4, 5, 9 and 11.
+                            a_line = a_line.replace(a_reference_name, a_reference_dictionary["gotogosub"][a_reference_name],1)
+                        else:
+                            # scenario 7
+                            error_list.append(glb_error_goto_unknown_reference)
+                            output_file_handler.write(a_line)
+                            present_error_message(a_line, line_number, glb_error_goto_unknown_reference)
                     else:
-                        # scenario 7
-                        print("syntax error - line", line_number, "GOTO reference undefined.", a_line)
+                        # scenario 6
+                        error_list.append(glb_error_goto_undefined_reference)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_goto_undefined_reference)
             output_file_handler.write(a_line)
             line_number = line_number + 1
     output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
 
 
 def resolve_gosub_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
@@ -502,14 +542,14 @@ def main():
         output_filename = source_filename_without_extension + ".st5"
         my_status = prepare_goto_and_gosub_references(input_filename, output_filename, glb_reference_dictionary)
 
-    print(glb_reference_dictionary)
-    exit()
-
     # resolve goto references
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st6"
-        resolve_goto_references(input_filename, output_filename, glb_reference_dictionary)
+        my_status = resolve_goto_references(input_filename, output_filename, glb_reference_dictionary)
+
+    print(glb_reference_dictionary)
+    exit()
 
     # resolve gosub references
     if my_status[0] == glb_no_error_code:
@@ -539,3 +579,8 @@ def main():
 if __name__ == "__main__":
     # execute only if run as a script
     main()
+
+# TODO - how to handle On BRK GOTO a line number
+# TODO - how to handle ON ERR GOTO line number
+# TODO - how to handle ON variable GOSUB line1, line2, line3
+# TODO - how to handle ON variable GOTO line1, line2, line3
