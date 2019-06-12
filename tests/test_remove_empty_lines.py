@@ -17,14 +17,17 @@ def count_number_of_lines_in_file(a_file_name):
 
 def print_file(a_file_name):
     print("File:", a_file_name)
-    print("file begin:[")
+    print("BEGIN[")
     with open(a_file_name, "r") as file_handler:
         for a_line in file_handler:
             print(a_line)
-    print("]: file ends")
+    print("]END")
 
 
 class TestRemoveEmptyLines(unittest.TestCase):
+
+    def setUp(self):
+        print(' setUp - nothing to setup')
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
@@ -36,9 +39,8 @@ class TestRemoveEmptyLines(unittest.TestCase):
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
 
-
-    def test_remove_empty_lines_scenario_1(self):
-        # scenario 1 - file contain some empty lines
+    def test_scenario_1(self):
+        # scenario 1 - file contains some empty lines
         file_handler = open(glb_input_filename, "w")
         file_handler.write("" + glb_new_line_symbol)
         file_handler.write(" " + glb_new_line_symbol)
@@ -52,22 +54,25 @@ class TestRemoveEmptyLines(unittest.TestCase):
         error_codes_list = remove_empty_lines(glb_input_filename, glb_output_filename)
         if error_codes_list[0] == 0:
             line_counter = count_number_of_lines_in_file(glb_output_filename)
-            self.assertTrue(line_counter == 5)
+        else:
+            line_counter = 0
+        self.assertTrue(line_counter == 5)
 
-
-    def test_remove_empty_lines_scenario_2(self):
-        # scenario 2 - file is empty
+    def test_scenario_2(self):
+        # scenario 2 - file is totally empty
         file_handler = open(glb_input_filename, "w")
         file_handler.write("")
         file_handler.close()
         error_codes_list = remove_empty_lines(glb_input_filename, glb_output_filename)
         if error_codes_list[0] == 0:
             line_counter = count_number_of_lines_in_file(glb_output_filename)
-            self.assertTrue(line_counter == 0)
+        else:
+            line_counter = 0
+        self.assertTrue(line_counter == 0)
 
 
-    def test_remove_empty_lines_scenario_3(self):
-        # scenario 3 - file does not contain empty lines
+    def test_scenario_3(self):
+        # scenario 3 - file does not contain any empty lines
         file_handler = open(glb_input_filename, "w")
         file_handler.write("DO NOT DELETE" + glb_new_line_symbol)
         file_handler.write("                                     DO NOT DELETE" + glb_new_line_symbol)
@@ -78,7 +83,9 @@ class TestRemoveEmptyLines(unittest.TestCase):
         error_codes_list = remove_empty_lines(glb_input_filename, glb_output_filename)
         if error_codes_list[0] == 0:
             line_counter = count_number_of_lines_in_file(glb_output_filename)
-            self.assertTrue(line_counter == 5)
+        else:
+            line_counter = 0
+        self.assertTrue(line_counter == 5)
 
 
 if __name__ == '__main__':

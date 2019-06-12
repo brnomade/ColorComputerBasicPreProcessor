@@ -29,7 +29,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         file_handler.write("DECLARE a_procedure_with_a_very_very_very_very_very_long_name(my_param_1, my_param_2, my_param_3, a_very_long_param, my_param_1$)" + glb_new_line_symbol)
         file_handler.write("DECLARE a_procedure_with_a_very_very_very_very_very_long_name (my_param_1, my_param_2, my_param_3, a_very_long_param, my_param_1$)" + glb_new_line_symbol)
         file_handler.close()
-        file_handler.close()
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
