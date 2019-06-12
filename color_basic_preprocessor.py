@@ -503,7 +503,7 @@ def main():
         my_status = prepare_goto_and_gosub_references(input_filename, output_filename, glb_reference_dictionary)
 
     print(glb_reference_dictionary)
-    exit();
+    exit()
 
     # resolve goto references
     if my_status[0] == glb_no_error_code:
