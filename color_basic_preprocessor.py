@@ -16,11 +16,11 @@ glb_script_configuration_filename = os.path.join(glb_folder_root, os.path.basena
 glb_msg_prefix_try = "Trying to"
 glb_msg_prefix_fail = "Failed to"
 glb_msg_prefix_ok = "Succeeded to"
-glb_script_log_filename = os.path.join(glb_folder_root, os.path.basename(__file__).split(".")[0] + ".log")
-logging.basicConfig(filename=glb_script_log_filename, level=logging.DEBUG,
-                    format="%(asctime)s %(levelname)s: %(process)d | %(thread)d | %(module)s | %(lineno)d |"
-                           " %(funcName)s | %(message)s",
-                    datefmt='%m/%d/%Y %I:%M:%S %p')
+# glb_script_log_filename = os.path.join(glb_folder_root, os.path.basename(__file__).split(".")[0] + ".log")
+# logging.basicConfig(filename=glb_script_log_filename, level=logging.DEBUG,
+#                    format="%(asctime)s %(levelname)s: %(process)d | %(thread)d | %(module)s | %(lineno)d |"
+#                           " %(funcName)s | %(message)s",
+#                    datefmt='%m/%d/%Y %I:%M:%S %p')
 #
 glb_available_numeric_references = deque([])
 for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
@@ -33,6 +33,8 @@ for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
         glb_available_string_references.append(item[0] + item[1] + "$")
 #
 glb_max_available_parameters_for_procedures = 10
+glb_line_number_start = 10
+glb_line_number_increment = 5
 #
 glb_available_procedure_numeric_parameters = list()
 glb_available_procedure_string_parameters = list()
@@ -42,6 +44,7 @@ for counter in range(1, glb_max_available_parameters_for_procedures):
 #
 glb_empty_symbol = ""
 glb_comment_symbol = "'"
+glb_space_symbol = " "
 glb_open_parenthesis_symbol = "("
 glb_close_parenthesis_symbol = ")"
 glb_dollar_symbol = "$"
@@ -208,15 +211,18 @@ def remove_empty_lines(an_input_file_name, an_output_file_name):
     return error_list
 
 
-def add_line_numbers_to_output_file(an_input_file_name, an_output_file_name):
-    line_number = 10
-    line_increment = 5
+def add_line_numbers(an_input_file_name, an_output_file_name):
+    error_list = list()
+    line_number = glb_line_number_start
     output_file_handler = open(an_output_file_name, "w")
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
-            output_file_handler.write(str(line_number) + " " + a_line)
-            line_number = line_number + line_increment
+            output_file_handler.write(str(line_number) + glb_space_symbol + a_line)
+            line_number = line_number + glb_line_number_increment
     output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
 
 
 def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name):
@@ -409,7 +415,7 @@ def main():
     # Script starts
     input_arguments = initialise_script_arguments_parser().parse_args()
     configuration = initialise_script_configuration_parser()
-    logging.info("**** Color Basic Preprocessor started ")
+    # logging.info("**** Color Basic Preprocessor started ")
     #
     my_status = [glb_no_error_code]
     #
@@ -433,13 +439,13 @@ def main():
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st3"
-        remove_empty_lines(input_filename, output_filename)
+        my_status = remove_empty_lines(input_filename, output_filename)
 
     # add line numbers to file
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st4"
-        add_line_numbers_to_output_file(input_filename, output_filename)
+        my_status = add_line_numbers(input_filename, output_filename)
 
     # prepare goto and gosub references
     if my_status[0] == glb_no_error_code:
