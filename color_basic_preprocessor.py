@@ -38,7 +38,7 @@ glb_line_number_increment = 5
 #
 glb_available_procedure_numeric_parameters = list()
 glb_available_procedure_string_parameters = list()
-for counter in range(1, glb_max_available_parameters_for_procedures):
+for counter in range(0, glb_max_available_parameters_for_procedures):
     glb_available_procedure_numeric_parameters.append(glb_available_numeric_references.pop())
     glb_available_procedure_string_parameters.append(glb_available_string_references.pop())
 #
@@ -62,14 +62,32 @@ glb_error_messages = ["no errors found",
                       "missing opening parentheses in procedure definition.",
                       "missing closing parentheses in procedure definition.",
                       "number of parameters in procedure exceeds " + str(glb_max_available_parameters_for_procedures) + ".",
-                      ""]
+                      "duplicate procedure name found.",
+                      "procedure name contains invalid character.",
+                      "",
+                      "",
+                      "duplicate GOTO/GOSUB reference name found.",
+                      "missing terminator for GOTO/GOSUB reference name.",
+                      "missing line number before GOTO/GOSUB reference.",
+                      "GOTO/GOSUB reference name contains invalid character."]
 # DECLARE related error codes
 glb_error_declare_multiple = 1
 glb_error_declare_missing_definition = 2
 glb_error_declare_missing_opening_parenthesis = 3
 glb_error_declare_missing_closing_parenthesis = 4
 glb_error_declare_parameters_exceeded = 5
-
+glb_error_declare_duplicate_definition = 6
+glb_error_declare_contains_invalid_character = 7
+# GOTO / GOSUB related errror codes
+glb_error_gotogosub_duplicate_reference = 10
+glb_error_gotogosub_missing_terminator = 11
+glb_error_gotogosub_missing_line_number = 12
+glb_error_gotogosub_contains_invalid_character = 13
+#
+glb_reference_dictionary = dict()
+glb_reference_dictionary["procedures"] = dict()
+glb_reference_dictionary["gotogosub"] = dict()
+#
 
 
 def present_script_section(a_section_name: str):
@@ -131,7 +149,20 @@ def present_error_message(a_line, a_line_number, an_error_code):
     print("syntax error", an_error_code, "line", a_line_number, glb_error_messages[an_error_code], a_line)
 
 
-def process_procedure_declaration(an_input_file_name, an_output_file_name):
+def remove_empty_lines(an_input_file_name, an_output_file_name):
+    error_list = list()
+    output_file_handler = open(an_output_file_name, "w")
+    with open(an_input_file_name, "r") as input_file_handler:
+        for a_line in input_file_handler:
+            if not a_line.strip() == glb_empty_symbol:
+                output_file_handler.write(a_line)
+    output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
+
+
+def process_procedure_declaration(an_input_file_name, an_output_file_name, a_reference_dictionary):
     line_number = 0
     error_list = list()
     #
@@ -148,63 +179,64 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name):
                 output_file_handler.write(a_line)
                 present_error_message(a_line, line_number, glb_error_declare_multiple)
             else:
-                a_line_splitted = a_line.rpartition("DECLARE")
-                if glb_comment_symbol in a_line_splitted[0]:
+                a_line_split = a_line.rpartition("DECLARE")
+                if glb_comment_symbol in a_line_split[0]:
                     # TODO - potential parameter - remove commented line from output
                     output_file_handler.write(a_line)
-                elif a_line_splitted[2].strip() == glb_empty_symbol:
+                elif a_line_split[2].strip() == glb_empty_symbol:
                     error_list.append(glb_error_declare_missing_definition)
                     output_file_handler.write(a_line)
                     present_error_message(a_line, line_number, glb_error_declare_missing_definition)
-                elif glb_open_parenthesis_symbol not in a_line_splitted[2]:
+                elif glb_open_parenthesis_symbol not in a_line_split[2]:
                     error_list.append(glb_error_declare_missing_opening_parenthesis)
                     output_file_handler.write(a_line)
                     present_error_message(a_line, line_number, glb_error_declare_missing_opening_parenthesis)
-                elif glb_close_parenthesis_symbol not in a_line_splitted[2]:
+                elif glb_close_parenthesis_symbol not in a_line_split[2]:
                     error_list.append(glb_error_declare_missing_closing_parenthesis)
                     output_file_handler.write(a_line)
                     present_error_message(a_line, line_number, glb_error_declare_missing_closing_parenthesis)
                 else:
-                    a_procedure_declaration = a_line_splitted[2].strip()
+                    a_procedure_declaration = a_line_split[2].strip()
                     a_procedure_name = a_procedure_declaration.split(glb_open_parenthesis_symbol)[0].strip()
-                    # TODO - potential paramter - add original line as a comment
-                    output_file_handler.write(glb_comment_symbol + a_line)
-                    output_file_handler.write(glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_new_line_symbol)
-                    a_parameter_list_declaration = a_procedure_declaration.split(glb_open_parenthesis_symbol)[1].strip().strip(glb_close_parenthesis_symbol).strip()
-                    if len(a_parameter_list_declaration) > 0:
-                        a_list_of_parameters = a_parameter_list_declaration.split(glb_comma_symbol)
-                        if len(a_list_of_parameters) > glb_max_available_parameters_for_procedures:
-                            error_list.append(glb_error_declare_parameters_exceeded)
-                            output_file_handler.write(a_line)
-                            present_error_message(a_line, line_number, glb_error_declare_parameters_exceeded)
-                        else:
-                            output_file_handler.write("LET ")
-                            numeric_parameter_counter = 0
-                            string_parameter_counter = 0
-                            a_new_line = glb_empty_symbol
-                            for a_parameter in a_list_of_parameters:
-                                if a_parameter.strip()[-1] == glb_dollar_symbol:
-                                    a_new_line = a_new_line + a_parameter.strip() + glb_equal_symbol + glb_available_procedure_string_parameters[string_parameter_counter] + glb_colon_symbol
-                                    string_parameter_counter = string_parameter_counter + 1
-                                else:
-                                    a_new_line = a_new_line + a_parameter.strip() + glb_equal_symbol + glb_available_procedure_numeric_parameters[numeric_parameter_counter] + glb_colon_symbol
-                                    numeric_parameter_counter = numeric_parameter_counter + 1
-                            a_new_line = a_new_line.rstrip(glb_colon_symbol)
-                            output_file_handler.write(a_new_line)
-                            output_file_handler.write(glb_new_line_symbol)
-    output_file_handler.close()
-    if len(error_list) == 0:
-        error_list.append(glb_no_error_code)
-    return error_list
-
-
-def remove_empty_lines(an_input_file_name, an_output_file_name):
-    error_list = list()
-    output_file_handler = open(an_output_file_name, "w")
-    with open(an_input_file_name, "r") as input_file_handler:
-        for a_line in input_file_handler:
-            if a_line.strip() != glb_empty_symbol:
-                output_file_handler.write(a_line)
+                    if glb_space_symbol in a_procedure_name:
+                        error_list.append(glb_error_declare_contains_invalid_character)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_declare_contains_invalid_character)
+                    elif a_procedure_name in a_reference_dictionary["procedures"].keys():
+                        error_list.append(glb_error_declare_duplicate_definition)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_declare_duplicate_definition)
+                    else:
+                        a_reference_dictionary["procedures"][a_procedure_name] = line_number
+                        # TODO - potential parameter - add original line as a comment
+                        output_file_handler.write(glb_comment_symbol + a_line)
+                        output_file_handler.write(glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_new_line_symbol)
+                        a_parameter_list_declaration = a_procedure_declaration.split(glb_open_parenthesis_symbol)[1].strip().strip(glb_close_parenthesis_symbol).strip()
+                        if len(a_parameter_list_declaration) > 0:
+                            a_list_of_parameters = a_parameter_list_declaration.split(glb_comma_symbol)
+                            if len(a_list_of_parameters) > glb_max_available_parameters_for_procedures:
+                                error_list.append(glb_error_declare_parameters_exceeded)
+                                output_file_handler.write(a_line)
+                                present_error_message(a_line, line_number, glb_error_declare_parameters_exceeded)
+                            else:
+                                output_file_handler.write("LET ")
+                                numeric_parameter_counter = 0
+                                string_parameter_counter = 0
+                                a_new_line = glb_empty_symbol
+                                # print(a_list_of_parameters)
+                                for a_parameter in a_list_of_parameters:
+                                    if a_parameter.strip()[-1] == glb_dollar_symbol:
+                                        # print(a_parameter, numeric_parameter_counter, string_parameter_counter)
+                                        a_new_line = a_new_line + a_parameter.strip() + glb_equal_symbol + glb_available_procedure_string_parameters[string_parameter_counter] + glb_colon_symbol
+                                        string_parameter_counter = string_parameter_counter + 1
+                                    else:
+                                        # print(a_parameter, numeric_parameter_counter, numeric_parameter_counter)
+                                        # print(glb_available_procedure_numeric_parameters)
+                                        a_new_line = a_new_line + a_parameter.strip() + glb_equal_symbol + glb_available_procedure_numeric_parameters[numeric_parameter_counter] + glb_colon_symbol
+                                        numeric_parameter_counter = numeric_parameter_counter + 1
+                                a_new_line = a_new_line.rstrip(glb_colon_symbol)
+                                output_file_handler.write(a_new_line)
+                                output_file_handler.write(glb_new_line_symbol)
     output_file_handler.close()
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
@@ -225,32 +257,49 @@ def add_line_numbers(an_input_file_name, an_output_file_name):
     return error_list
 
 
-def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name):
+def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
+    # goto and gosub references are represented as _<a label>:
+    # the reference is expected to be at the start of a line
+    # reference names cannot contain spaces
+    # line numbers are expected to exist on the line
+    line_number = 0
+    error_list = list()
+    #
     output_file_handler = open(an_output_file_name, "w")
-    reference_dictionary = dict()
-    line_number = 1
+    #
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
-            a_line_splitted = a_line.rstrip().split(" ")
-            # print(a_line_splitted)
-            a_line_number = a_line_splitted[0]
-            a_reference_name = a_line_splitted[1][0:-1]
-            a_prefix = a_line_splitted[1][0]
-            a_terminator = a_line_splitted[1][-1]
-            if a_prefix == "_":
-                if a_terminator == ":":
-                    if a_reference_name in reference_dictionary.keys():
-                        print("syntax error - line", line_number, "Duplicated GOTO/GOSUB reference name found.", a_line)
-                    reference_dictionary[a_reference_name] = a_line_number
-                    output_file_handler.write(a_line_number + " " + "'" + a_reference_name + "\n")
-                else:
-                    print("syntax error - line", line_number, "missing terminator after destination reference name", a_line)
-            else:
-                output_file_handler.write(a_line)
             line_number = line_number + 1
+            if len(a_line.lstrip()) > 0:
+                a_line_number = a_line.split(glb_space_symbol)[0].strip()
+                if not a_line_number.isnumeric():
+                    error_list.append(glb_error_gotogosub_missing_line_number)
+                    output_file_handler.write(a_line)
+                    present_error_message(a_line, line_number, glb_error_gotogosub_missing_line_number)
+                else:
+                    a_reference_name = a_line.rpartition(a_line_number)[2].strip()
+                    if a_reference_name[0] == glb_underscore_symbol:
+                        if glb_space_symbol in a_reference_name:
+                            error_list.append(glb_error_gotogosub_contains_invalid_character)
+                            output_file_handler.write(a_line)
+                            present_error_message(a_line, line_number, glb_error_gotogosub_contains_invalid_character)
+                        elif a_reference_name[-1] == glb_colon_symbol:
+                            if a_reference_name in a_reference_dictionary["gotogosub"].keys():
+                                error_list.append(glb_error_gotogosub_duplicate_reference)
+                                output_file_handler.write(a_line)
+                                present_error_message(a_line, line_number, glb_error_gotogosub_duplicate_reference)
+                            a_reference_dictionary["gotogosub"][a_reference_name] = a_line_number
+                            output_file_handler.write(a_line_number + glb_space_symbol + glb_comment_symbol + a_reference_name + glb_new_line_symbol)
+                        else:
+                            error_list.append(glb_error_gotogosub_missing_terminator)
+                            output_file_handler.write(a_line)
+                            present_error_message(a_line, line_number, glb_error_gotogosub_missing_terminator)
+                    else:
+                        output_file_handler.write(a_line)
     output_file_handler.close()
-    # print(reference_dictionary)
-    return reference_dictionary
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
 
 
 def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
@@ -429,17 +478,17 @@ def main():
     present_script_title()
     present_script_settings(configuration, input_arguments)
 
-    # Process procedure declarations
-    if my_status[0] == glb_no_error_code:
-        input_filename = output_filename
-        output_filename = source_filename_without_extension + ".st2"
-        my_status = process_procedure_declaration(input_filename, output_filename)
-
     # Remove empty lines from the source file
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
-        output_filename = source_filename_without_extension + ".st3"
+        output_filename = source_filename_without_extension + ".st2"
         my_status = remove_empty_lines(input_filename, output_filename)
+
+    # Process procedure declarations
+    if my_status[0] == glb_no_error_code:
+        input_filename = output_filename
+        output_filename = source_filename_without_extension + ".st3"
+        my_status = process_procedure_declaration(input_filename, output_filename, glb_reference_dictionary)
 
     # add line numbers to file
     if my_status[0] == glb_no_error_code:
@@ -451,13 +500,16 @@ def main():
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st5"
-        a_dictionary = prepare_goto_and_gosub_references(input_filename, output_filename)
+        my_status = prepare_goto_and_gosub_references(input_filename, output_filename, glb_reference_dictionary)
+
+    print(glb_reference_dictionary)
+    exit();
 
     # resolve goto references
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st6"
-        resolve_goto_references(input_filename, output_filename, a_dictionary)
+        resolve_goto_references(input_filename, output_filename, glb_reference_dictionary)
 
     # resolve gosub references
     if my_status[0] == glb_no_error_code:
