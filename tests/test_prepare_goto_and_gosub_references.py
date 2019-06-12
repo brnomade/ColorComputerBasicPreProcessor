@@ -38,7 +38,7 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
 
-    def test_scenario_1( self ):
+    def test_scenario_1(self):
         # scenario 1
         file_handler = open(glb_input_filename, "w")
         file_handler.write("_continue:                          " + glb_new_line_symbol)
@@ -60,4 +60,3 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
         self.assertEqual(error_codes_list, [12, 10, 13, 13, 13, 11, 11, 13, 13])
         self.assertEqual({'_continue:': '20', '_end:': '50', '_start:': '60', '_closure:': '70', '_correct_label:': '100', '_will_this_work_label:': '120'}, glb_reference_dictionary["gotogosub"])
-
