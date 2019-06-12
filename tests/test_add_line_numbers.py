@@ -27,7 +27,7 @@ def print_file(a_file_name):
 class TestAddLineNumbers(unittest.TestCase):
 
     def setUp(self):
-        print(' setUp - nothing to setup')
+        print(' ', type(self).__name__, '- setUp - nothing to setup')
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
@@ -59,9 +59,8 @@ class TestAddLineNumbers(unittest.TestCase):
             with open(glb_output_filename, "r") as file_handler:
                 line_counter = 0
                 for a_line in file_handler:
-                    if a_line.split(glb_space_symbol)[0] != str(glb_line_number_start + (line_counter * glb_line_number_increment)):
-                        self.assertTrue(False)
-        self.assertTrue(True)
+                    self.assertEqual(a_line.split(glb_space_symbol)[0], str(glb_line_number_start + (line_counter * glb_line_number_increment)))
+                    line_counter = line_counter + 1
 
     def test_scenario_2(self):
         # scenario 2 - file is totally empty
@@ -73,9 +72,8 @@ class TestAddLineNumbers(unittest.TestCase):
             with open(glb_output_filename, "r") as file_handler:
                 line_counter = 0
                 for a_line in file_handler:
-                    if a_line.split(glb_space_symbol)[0] != str(glb_line_number_start + (line_counter * glb_line_number_increment)):
-                        self.assertTrue(False)
-        self.assertTrue(True)
+                    self.assertEqual(a_line.split(glb_space_symbol)[0], str(glb_line_number_start + (line_counter * glb_line_number_increment)))
+                    line_counter = line_counter + 1
 
 
 if __name__ == '__main__':
