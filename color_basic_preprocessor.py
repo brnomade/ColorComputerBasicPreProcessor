@@ -85,7 +85,7 @@ glb_error_gotogosub_missing_line_number = 12
 glb_error_gotogosub_contains_invalid_character = 13
 #
 glb_reference_dictionary = dict()
-glb_reference_dictionary["procedures"] = dict()
+glb_reference_dictionary["declares"] = dict()
 glb_reference_dictionary["gotogosub"] = dict()
 #
 
@@ -202,12 +202,12 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                         error_list.append(glb_error_declare_contains_invalid_character)
                         output_file_handler.write(a_line)
                         present_error_message(a_line, line_number, glb_error_declare_contains_invalid_character)
-                    elif a_procedure_name in a_reference_dictionary["procedures"].keys():
+                    elif a_procedure_name in a_reference_dictionary["declares"].keys():
                         error_list.append(glb_error_declare_duplicate_definition)
                         output_file_handler.write(a_line)
                         present_error_message(a_line, line_number, glb_error_declare_duplicate_definition)
                     else:
-                        a_reference_dictionary["procedures"][a_procedure_name] = line_number
+                        a_reference_dictionary["declares"][a_procedure_name] = line_number
                         # TODO - potential parameter - add original line as a comment
                         output_file_handler.write(glb_comment_symbol + a_line)
                         output_file_handler.write(glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_new_line_symbol)
