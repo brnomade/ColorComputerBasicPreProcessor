@@ -1,5 +1,6 @@
 import unittest
-from color_basic_preprocessor import resolve_goto_references, prepare_goto_and_gosub_references, glb_new_line_symbol, glb_reference_dictionary, glb_no_error_code
+from color_basic_preprocessor import resolve_goto_references, prepare_goto_and_gosub_references
+from color_basic_preprocessor import glb_new_line_symbol, glb_reference_dictionary, glb_no_error_code
 import os
 
 glb_input_filename = "unit_test_input.txt"
@@ -73,7 +74,6 @@ class TestResolveGotoReferencesTest(unittest.TestCase):
         if error_codes_list[0] == glb_no_error_code:
             error_codes_list = resolve_goto_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
             print(error_codes_list)
-            self.assertEqual(error_codes_list, [23,23,23,21,21,21,21,21,21,20,20,22,21])
+            self.assertEqual(error_codes_list, [23, 23, 23, 21, 21, 21, 21, 21, 21, 20, 20, 22, 21])
         else:
             self.fail("error on pre-condition method.")
-
