@@ -1,10 +1,10 @@
 import unittest
-from color_basic_preprocessor import prepare_goto_and_gosub_references, resolve_gosub_references
-from color_basic_preprocessor import glb_new_line_symbol, glb_reference_dictionary, glb_no_error_code
+from color_basic_preprocessor import prepare_goto_and_gosub_references, resolve_gosub_references, initialise_a_reference_dictionary
+from color_basic_preprocessor import glb_new_line_symbol, glb_no_error_code
 import os
 
-glb_input_filename = "unit_test_input.txt"
-glb_output_filename = "unit_test_output.txt"
+glb_input_filename = "in_resolve_gosub_references.txt"
+glb_output_filename = "out_resolve_gosub_references.txt"
 
 
 def count_number_of_lines_in_file(a_file_name):
@@ -82,10 +82,10 @@ class TestResolveGosubReferences(unittest.TestCase):
         file_handler.write("45                                                               " + glb_new_line_symbol)
         file_handler.write("46 GOSUB_location_02::GOSUB_location_22::GOSUB _location_30:     " + glb_new_line_symbol)
         file_handler.close()
-        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
+        a_reference_dictionary = initialise_a_reference_dictionary()
+        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
         if error_codes_list[0] == glb_no_error_code:
-            error_codes_list = resolve_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
-            print(error_codes_list)
+            error_codes_list = resolve_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
             self.assertEqual(error_codes_list, [32, 32, 32, 30, 30, 30, 30, 30, 30, 31, 30, 31])
         else:
             self.fail("error on pre-condition method.")
