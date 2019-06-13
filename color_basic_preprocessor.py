@@ -475,12 +475,12 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
                     a_strip_reference_name = a_reference_name.strip()
                     if a_strip_reference_name == glb_empty_symbol:
                         # scenario 6
-                        error_list = handle_syntax_error(glb_error_gosub_undefined_reference, line_number, a_line,error_list, output_file_handler)
+                        error_list = handle_syntax_error(glb_error_gosub_undefined_reference, line_number, a_line, error_list, output_file_handler)
                         # error_list.append(glb_error_gosub_undefined_reference)
                         # output_file_handler.write(a_line)
                         # present_error_message(a_line, line_number, glb_error_gosub_undefined_reference)
                     elif not (a_strip_reference_name[0] == glb_underscore_symbol) or not (a_strip_reference_name[-1] == glb_colon_symbol):
-                        error_list = handle_syntax_error(glb_error_gosub_malformed_reference_name, line_number, a_line,error_list, output_file_handler)
+                        error_list = handle_syntax_error(glb_error_gosub_malformed_reference_name, line_number, a_line, error_list, output_file_handler)
                         # error_list.append(glb_error_gosub_malformed_reference_name)
                         # output_file_handler.write(a_line)
                         # present_error_message(a_line, line_number, glb_error_gosub_malformed_reference_name)
@@ -490,7 +490,7 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
                     else:
                         # scenario 7
                         # print("found: [" + a_reference_name + "]")
-                        error_list = handle_syntax_error(glb_error_gosub_unknown_reference, line_number, a_line,error_list, output_file_handler)
+                        error_list = handle_syntax_error(glb_error_gosub_unknown_reference, line_number, a_line, error_list, output_file_handler)
                         # error_list.append(glb_error_gosub_unknown_reference)
                         # output_file_handler.write(a_line)
                         # present_error_message(a_line, line_number, glb_error_gosub_unknown_reference)
