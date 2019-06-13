@@ -1,9 +1,10 @@
 import unittest
-from color_basic_preprocessor import prepare_goto_and_gosub_references, glb_new_line_symbol, glb_reference_dictionary
+from color_basic_preprocessor import prepare_goto_and_gosub_references, initialise_a_reference_dictionary
+from color_basic_preprocessor import glb_new_line_symbol
 import os
 
-glb_input_filename = "unit_test_input.txt"
-glb_output_filename = "unit_test_output.txt"
+glb_input_filename = "in_prepare_goto_and_gosub_references.txt"
+glb_output_filename = "out_prepare_goto_and_gosub_references.txt"
 
 
 def count_number_of_lines_in_file(a_file_name):
@@ -67,6 +68,11 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         file_handler.write("30 some code _an_incorrect_scenario:                          " + glb_new_line_symbol)
         file_handler.write("31 _an_invalid_reference: some code following it              " + glb_new_line_symbol)
         file_handler.close()
-        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
+        a_reference_dictionary = initialise_a_reference_dictionary()
+        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
         self.assertEqual(error_codes_list, [12, 12, 12, 13, 11, 10, 13, 11, 11, 13, 13, 12, 13])
-        self.assertEqual({'_correct1:': '13', '_correct2:': '16', '_correct:': '18', '_correct_label:': '21', '_a_very_correct_label:': '23'}, glb_reference_dictionary["gotogosub"])
+        self.assertEqual({'_correct1:': '13', '_correct2:': '16', '_correct:': '18', '_correct_label:': '21', '_a_very_correct_label:': '23'}, a_reference_dictionary["gotogosub"])
+
+
+if __name__ == '__main__':
+    unittest.main()
