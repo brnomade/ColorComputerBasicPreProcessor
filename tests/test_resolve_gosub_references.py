@@ -89,3 +89,7 @@ class TestResolveGosubReferences(unittest.TestCase):
             self.assertEqual(error_codes_list, [32, 32, 32, 30, 30, 30, 30, 30, 30, 31, 30, 31])
         else:
             self.fail("error on pre-condition method.")
+
+
+if __name__ == '__main__':
+    unittest.main()
