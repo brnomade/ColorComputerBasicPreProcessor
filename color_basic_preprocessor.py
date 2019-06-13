@@ -190,6 +190,13 @@ def present_error_message(a_line, a_line_number, an_error_code):
     print()
 
 
+def handle_syntax_error(an_error_code, a_line_number, a_line, an_error_list, a_file_handler):
+    an_error_list.append(an_error_code)
+    a_file_handler.write(a_line)
+    present_error_message(a_line, a_line_number, an_error_code)
+    return an_error_list
+
+
 def remove_empty_lines(an_input_file_name, an_output_file_name):
     error_list = list()
     output_file_handler = open(an_output_file_name, "w")
@@ -311,34 +318,44 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
             line_number = line_number + 1
-            if len(a_line.lstrip()) > 0:
+            if len(a_line.strip()) > 0:
                 a_line_number = a_line.split(glb_space_symbol)[0].strip()
-                if not a_line_number.isnumeric():
-                    error_list.append(glb_error_gotogosub_missing_line_number)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_gotogosub_missing_line_number)
-                else:
+                if a_line_number.isnumeric():
                     a_reference_name = a_line.rpartition(a_line_number)[2].strip()
                     if a_reference_name == glb_empty_symbol:
+                        # scenario - the line has nothing after the line number
                         output_file_handler.write(a_line)
                     elif a_reference_name[0] == glb_underscore_symbol:
                         if glb_space_symbol in a_reference_name:
+                            # scenario - the potential reference is incorrectly named or more code is on the same line
                             error_list.append(glb_error_gotogosub_contains_invalid_character)
                             output_file_handler.write(a_line)
                             present_error_message(a_line, line_number, glb_error_gotogosub_contains_invalid_character)
                         elif a_reference_name[-1] == glb_colon_symbol:
                             if a_reference_name in a_reference_dictionary["gotogosub"].keys():
+                                # scenario - the potential reference has been previously used
                                 error_list.append(glb_error_gotogosub_duplicate_reference)
                                 output_file_handler.write(a_line)
                                 present_error_message(a_line, line_number, glb_error_gotogosub_duplicate_reference)
                             a_reference_dictionary["gotogosub"][a_reference_name] = a_line_number
+                            # TODO - potential option to keep the reference as comment and used it as a target or remove the line and use as target the next line
                             output_file_handler.write(a_line_number + glb_space_symbol + glb_comment_symbol + a_reference_name + glb_new_line_symbol)
                         else:
+                            # scenario - the potential reference ends with something different than :
                             error_list.append(glb_error_gotogosub_missing_terminator)
                             output_file_handler.write(a_line)
                             present_error_message(a_line, line_number, glb_error_gotogosub_missing_terminator)
                     else:
+                        # scenario - the potential reference starts with something different than _
                         output_file_handler.write(a_line)
+                else:
+                    # scenario - the line does not start with a line number
+                    error_list.append(glb_error_gotogosub_missing_line_number)
+                    output_file_handler.write(a_line)
+                    present_error_message(a_line, line_number, glb_error_gotogosub_missing_line_number)
+            else:
+                # scenario - the line is completely empty
+                output_file_handler.write(a_line)
     output_file_handler.close()
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
@@ -579,6 +596,10 @@ def main():
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st5"
         my_status = prepare_goto_and_gosub_references(input_filename, output_filename, glb_reference_dictionary)
+
+    print(glb_reference_dictionary)
+    exit()
+
 
     # resolve goto references
     if my_status[0] == glb_no_error_code:
