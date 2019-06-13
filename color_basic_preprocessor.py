@@ -168,6 +168,9 @@ def present_error_message(a_line, a_line_number, an_error_code):
     # TODO - showing the original line
     # TODO - showing only the error code but not the error message
     # TODO - not showing any error message on screen
+    a_basic_line_number = a_line.split(glb_space_symbol)[0].strip()
+    if a_basic_line_number.isnumeric():
+        a_line_number = a_basic_line_number
     print(a_line, "^---", "syntax error #" + str(an_error_code), "on line", a_line_number, ": " + glb_error_messages[an_error_code])
     print()
 
@@ -344,6 +347,7 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
     output_file_handler = open(an_output_file_name, "w")
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
+            line_number = line_number + 1
             if glb_keyword_goto in a_line:
                 if glb_comment_symbol in a_line:
                     # scenario 8
@@ -383,7 +387,6 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                                 output_file_handler.write(a_line)
                                 present_error_message(a_line, line_number, glb_error_goto_unknown_reference)
             output_file_handler.write(a_line)
-            line_number = line_number + 1
     output_file_handler.close()
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
@@ -404,8 +407,10 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
     # scenario 10 -> VALID -> 10 GOSUB here: GOSUB there: GOSUB futher:
     # scenario 11 -> VALID -> 10 GOSUB _somewhere:GOSUB_somewhere:GOSUB_somewhere"
     # scenario 12 -> VALID ->10 GOSUB _somewhere 'GOSUB _somewhere: GOSUB _somewhere"
+    line_number = 0
+    error_list = list()
+    #
     output_file_handler = open(an_output_file_name, "w")
-    line_number = 1
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
             if "GOSUB" in a_line:
