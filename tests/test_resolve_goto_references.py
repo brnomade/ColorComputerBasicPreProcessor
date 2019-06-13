@@ -31,13 +31,13 @@ class TestResolveGotoReferencesTest(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
-            # os.remove(glb_input_filename)
-            print("D")
+            os.remove(glb_input_filename)
+            # print("D")
         else:
             print("can't find file", glb_input_filename, ". will not delete it.")
         if os.path.exists(glb_output_filename):
-            # os.remove(glb_output_filename)
-            print("D")
+            os.remove(glb_output_filename)
+            # print("D")
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
 
