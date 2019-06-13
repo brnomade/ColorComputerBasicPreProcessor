@@ -43,6 +43,7 @@ for counter in range(0, glb_max_available_parameters_for_procedures):
     glb_available_procedure_string_parameters.append(glb_available_string_references.pop())
 #
 glb_keyword_goto = "GOTO"
+glb_keyword_gosub = "GOSUB"
 glb_keyword_declare = "DECLARE"
 #
 glb_empty_symbol = ""
@@ -82,7 +83,16 @@ glb_error_messages = ["no errors found",
                       "Multiple GOTO statements in a single line found.",
                       "GOTO reference missing or incorrectly defined.",
                       "GOTO reference unknown.",
-                      "missing prefix on GOTO reference name."]
+                      "missing prefix on GOTO reference name.",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "",
+                      "GOSUB reference missing or incorrectly defined.",
+                      "GOSUB reference unknown.",
+                      "missing prefix on GOSUB reference name."]
 
 # DECLARE related error codes
 glb_error_declare_multiple = 1
@@ -104,6 +114,11 @@ glb_error_goto_multiple_found = 20
 glb_error_goto_undefined_reference = 21
 glb_error_goto_unknown_reference = 22
 glb_error_goto_malformed_reference_name = 23
+
+# GOSUB resolution related error codes
+glb_error_gosub_undefined_reference = 30
+glb_error_gosub_unknown_reference = 31
+glb_error_gosub_malformed_reference_name = 32
 
 #
 glb_reference_dictionary = dict()
@@ -173,6 +188,7 @@ def present_error_message(a_line, a_line_number, an_error_code):
         a_line_number = a_basic_line_number
     print(a_line, "^---", "syntax error #" + str(an_error_code), "on line", a_line_number, ": " + glb_error_messages[an_error_code])
     print()
+
 
 def remove_empty_lines(an_input_file_name, an_output_file_name):
     error_list = list()
@@ -364,6 +380,10 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                     present_error_message(a_line, line_number, glb_error_goto_multiple_found)
                 elif a_line_split.count(glb_keyword_goto) == 1:
                     result = re.search("GOTO(.+?:)?", a_line_split).group(1)
+                    # if result is None:
+                    #     print("regex returns: None")
+                    # else:
+                    #     print("regex returns:", result)
                     if result is None:
                         # scenario 6
                         error_list.append(glb_error_goto_undefined_reference)
@@ -395,57 +415,62 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
 
 def resolve_gosub_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
     # Scenarios:
-    # scenario 01 -> VALID -> 10 SOME CODE:GOSUB somewhere
-    # scenario 02 -> VALID -> 10 SOME CODE: GOSUB somewhere
-    # scenario 03 -> VALID -> 10 GOSUB somewhere
-    # scenario 04 -> VALID -> 10 SOME CODE: GOSUB_somewhere
-    # scenario 05 -> VALID -> 10 SOME CODE:GOSUB_somewhere
-    # scenario 06 -> ERROR -> 10 GOSUB [blank] missing the target
-    # scenario 07 -> ERROR -> 10 GOSUB undefined_somewhere
-    # scenario 08 -> NO ACTION -> 10 ' whatever GOSUB whatever
-    # scenario 09 -> VALID -> 10 SOME CODE: GOSUB _somewhere 'A COMMENT
-    # scenario 10 -> VALID -> 10 GOSUB here: GOSUB there: GOSUB futher:
-    # scenario 11 -> VALID -> 10 GOSUB _somewhere:GOSUB_somewhere:GOSUB_somewhere"
-    # scenario 12 -> VALID ->10 GOSUB _somewhere 'GOSUB _somewhere: GOSUB _somewhere"
+    # scenario 01  -> 10 GOSUB somewhere
+    # scenario 02  -> 10 SOME CODE: GOSUB somewhere
+    # scenario 03  -> 10 SOME CODE:  GOSUB somewhere: SOME MORE CODE HERE
+    # scenario 06  -> 10 GOSUB [blank] - target is empty
+    # scenario 07  -> 10 GOSUB [undefined_somewhere] - target is not empty but has not been declared previously
+    # scenario 08a -> 10 ' whatever GOSUB whatever
+    # scenario 08b -> 10 SOME CODE: GOSUB _somewhere 'A COMMENT
+    # scenario 08c -> 10 GOSUB _somewhere ' GOSUB somewhere GOSUB somewhere
+    # scenario 10a -> 10 SOME CODE: GOSUB somewhere: GOSUB somewhere else
+    # scenario 10b -> 10 GOSUB somewhere: GOSUB somewhere else : SOME CODE
     line_number = 0
     error_list = list()
     #
     output_file_handler = open(an_output_file_name, "w")
     with open(an_input_file_name, "r") as input_file_handler:
         for a_line in input_file_handler:
-            if "GOSUB" in a_line:
-                a_line_splitted = a_line.rpartition("GOSUB")
-                if "'" in a_line_splitted[0]:
-                    # scenario 8
-                    print("line", line_number, "- commented line - skipping.")
-                elif a_line.count("GOSUB") > 1:
-                    # scenario 10, 11 and 12
-                    for a_slice_of_line in a_line.split(":"):
-                        a_split = a_slice_of_line.rpartition("GOSUB")
-                        if a_split[1].strip() == "GOSUB":
-                            a_reference_name = a_split[2].strip()
-                            if a_reference_name == "":
-                                # scenario 6
-                                print("syntax error - line", line_number, "GOSUB reference missing.", a_line, "column", a_slice_of_line)
-                            elif a_reference_name in a_reference_dictionary:
-                                a_line = a_line.replace(a_reference_name, str(a_reference_dictionary[a_reference_name]))
-                            else:
-                                # scenario 7
-                                print("syntax error - line", line_number, "GOSUB reference undefined.", a_line, "column", a_slice_of_line)
-                elif a_line_splitted[2].strip() == "":
-                    # scenario 6
-                    print("syntax error - line", line_number, "GOSUB reference missing.", a_line)
-                else:
-                    a_reference_name = a_line_splitted[2].strip().split(" ")[0]
-                    if a_reference_name in a_reference_dictionary:
-                        # scenarios 1, 2, 3, 4, 5 and 9.
-                        a_line = a_line.replace(a_reference_name, str(a_reference_dictionary[a_reference_name]))
+            line_number = line_number + 1
+            if glb_comment_symbol in a_line:
+                # scenario 8
+                # identify if the GOSUB keyword is located to the left of the comment symbol. i.e.: 10 GOSUB 20 '
+                position_of_comment_symbol = a_line.find(glb_comment_symbol)
+                a_line_split = a_line[0: position_of_comment_symbol]
+                # print("comment found",position_of_comment_symbol,a_line_split)
+            else:
+                a_line_split = a_line
+            if glb_keyword_gosub in a_line_split:
+                result = re.findall("GOSUB(.+?:)?", a_line_split)
+                # if not result:
+                #     print("regex returns: None")
+                # else:
+                #     print("regex returns:", result)
+                for a_reference_name in result:
+                    a_strip_reference_name = a_reference_name.strip()
+                    if a_strip_reference_name == glb_empty_symbol:
+                        # scenario 6
+                        error_list.append(glb_error_gosub_undefined_reference)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_gosub_undefined_reference)
+                    elif not (a_strip_reference_name[0] == glb_underscore_symbol) or not (a_strip_reference_name[-1] == glb_colon_symbol):
+                        error_list.append(glb_error_gosub_malformed_reference_name)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_gosub_malformed_reference_name)
+                    elif a_strip_reference_name in a_reference_dictionary["gotogosub"].keys():
+                        # scenarios 1,2,3.
+                        a_line = a_line.replace(a_strip_reference_name, a_reference_dictionary["gotogosub"][a_strip_reference_name], 1)
                     else:
                         # scenario 7
-                        print("syntax error - line", line_number, "GOSUB reference undefined.", a_line)
+                        # print("found: [" + a_reference_name + "]")
+                        error_list.append(glb_error_gosub_unknown_reference)
+                        output_file_handler.write(a_line)
+                        present_error_message(a_line, line_number, glb_error_gosub_unknown_reference)
             output_file_handler.write(a_line)
-            line_number = line_number + 1
     output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
 
 
 def prepare_variables_references(an_input_file_name, an_output_file_name):
@@ -561,14 +586,14 @@ def main():
         output_filename = source_filename_without_extension + ".st6"
         my_status = resolve_goto_references(input_filename, output_filename, glb_reference_dictionary)
 
-    print(glb_reference_dictionary)
-    exit()
-
     # resolve gosub references
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st7"
-        resolve_gosub_references(input_filename, output_filename, a_dictionary)
+        resolve_gosub_references(input_filename, output_filename, glb_reference_dictionary)
+
+    print(glb_reference_dictionary)
+    exit()
 
     # prepare variables references
     if my_status[0] == glb_no_error_code:
