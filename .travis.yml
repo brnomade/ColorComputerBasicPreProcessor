@@ -3,8 +3,9 @@ language: python
 python:
   - "3.7"
 script:
-  - python -m unittest tests/test_remove_empty_lines.py
-  - python -m unittest tests/test_process_procedure_declaration.py
   - python -m unittest tests/test_add_line_numbers.py
   - python -m unittest tests/test_prepare_goto_and_gosub_references.py
+  - python -m unittest tests/test_process_procedure_declaration.py
+  - python -m unittest tests/test_remove_empty_lines.py
+  - python -m unittest tests/test_resolve_gosub_reference.py
   - python -m unittest tests/test_resolve_goto_reference.py

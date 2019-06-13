@@ -1,9 +1,10 @@
 import unittest
-from color_basic_preprocessor import prepare_goto_and_gosub_references, glb_new_line_symbol, glb_reference_dictionary
+from color_basic_preprocessor import prepare_goto_and_gosub_references, initialise_a_reference_dictionary
+from color_basic_preprocessor import glb_new_line_symbol
 import os
 
-glb_input_filename = "unit_test_input.txt"
-glb_output_filename = "unit_test_output.txt"
+glb_input_filename = "in_prepare_goto_and_gosub_references.txt"
+glb_output_filename = "out_prepare_goto_and_gosub_references.txt"
 
 
 def count_number_of_lines_in_file(a_file_name):
@@ -41,23 +42,37 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
     def test_scenario_1(self):
         # scenario 1
         file_handler = open(glb_input_filename, "w")
-        file_handler.write("_continue:                              " + glb_new_line_symbol)
-        file_handler.write("5                                       " + glb_new_line_symbol)
-        file_handler.write("10 _continue:                           " + glb_new_line_symbol)
-        file_handler.write("20 _continue:                           " + glb_new_line_symbol)
-        file_handler.write("30 _ continue:                          " + glb_new_line_symbol)
-        file_handler.write("40 _this is a wrong label               " + glb_new_line_symbol)
-        file_handler.write("50 _end:                                " + glb_new_line_symbol)
-        file_handler.write("60 _start:                              " + glb_new_line_symbol)
-        file_handler.write("70 _closure:                            " + glb_new_line_symbol)
-        file_handler.write("80 _ incorrect label :                  " + glb_new_line_symbol)
-        file_handler.write("90 _incorrect_label                     " + glb_new_line_symbol)
-        file_handler.write("100 _correct_label:                     " + glb_new_line_symbol)
-        file_handler.write("110 _another_incorrect_label            " + glb_new_line_symbol)
-        file_handler.write("120         _will_this_work_label:      " + glb_new_line_symbol)
-        file_handler.write("130         _will_this_work_label :     " + glb_new_line_symbol)
-        file_handler.write("140         _ will_this_work_label:     " + glb_new_line_symbol)
+        file_handler.write(glb_new_line_symbol)
+        file_handler.write("_missing_line_number:                                         " + glb_new_line_symbol)
+        file_handler.write("AA _strings_instead_of_line_number_at_start_of_line:          " + glb_new_line_symbol)
+        file_handler.write("10 '_irrelevant:                                              " + glb_new_line_symbol)
+        file_handler.write("11 ' _also_irrelevant                                         " + glb_new_line_symbol)
+        file_handler.write("12_incorrect:                                                 " + glb_new_line_symbol)
+        file_handler.write("13       _correct1:                                           " + glb_new_line_symbol)
+        file_handler.write("14 _ incorrect:                                               " + glb_new_line_symbol)
+        file_handler.write("15 _this_is_incorrect                                         " + glb_new_line_symbol)
+        file_handler.write("16 _correct2:                                                 " + glb_new_line_symbol)
+        file_handler.write("17 _correct2:                                                 " + glb_new_line_symbol)
+        file_handler.write("18 _correct:                                                  " + glb_new_line_symbol)
+        file_handler.write("19 _ incorrect label :                                        " + glb_new_line_symbol)
+        file_handler.write("20 _incorrect_label                                           " + glb_new_line_symbol)
+        file_handler.write("21 _correct_label:                                            " + glb_new_line_symbol)
+        file_handler.write("22 _another_incorrect_label                                   " + glb_new_line_symbol)
+        file_handler.write("23        _a_very_correct_label:                              " + glb_new_line_symbol)
+        file_handler.write("24        _a_very_incorrect_label :                           " + glb_new_line_symbol)
+        file_handler.write("25        _ a_very_incorrect_label:                           " + glb_new_line_symbol)
+        file_handler.write("26 '         _a_correct_but_irrelevant_label:                 " + glb_new_line_symbol)
+        file_handler.write("'27          an_incorrect_but_irrelevant_label:               " + glb_new_line_symbol)
+        file_handler.write("28 '          _another_incorrect_but_irrelevant_label         " + glb_new_line_symbol)
+        file_handler.write("29 some code _an_incorrect_scenario                           " + glb_new_line_symbol)
+        file_handler.write("30 some code _an_incorrect_scenario:                          " + glb_new_line_symbol)
+        file_handler.write("31 _an_invalid_reference: some code following it              " + glb_new_line_symbol)
         file_handler.close()
-        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
-        self.assertEqual(error_codes_list, [12, 10, 13, 13, 13, 11, 11, 13, 13])
-        self.assertEqual({'_continue:': '20', '_end:': '50', '_start:': '60', '_closure:': '70', '_correct_label:': '100', '_will_this_work_label:': '120'}, glb_reference_dictionary["gotogosub"])
+        a_reference_dictionary = initialise_a_reference_dictionary()
+        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
+        self.assertEqual(error_codes_list, [12, 12, 12, 13, 11, 10, 13, 11, 11, 13, 13, 12, 13])
+        self.assertEqual({'_correct1:': '13', '_correct2:': '16', '_correct:': '18', '_correct_label:': '21', '_a_very_correct_label:': '23'}, a_reference_dictionary["gotogosub"])
+
+
+if __name__ == '__main__':
+    unittest.main()

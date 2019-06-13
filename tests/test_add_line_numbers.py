@@ -1,10 +1,11 @@
 import unittest
-from color_basic_preprocessor import add_line_numbers, glb_space_symbol, glb_line_number_increment, glb_line_number_start
+from color_basic_preprocessor import add_line_numbers
+from color_basic_preprocessor import glb_space_symbol, glb_line_number_increment, glb_line_number_start
 import os
 
 glb_new_line_symbol = "\n"
-glb_input_filename = "unit_test_input.txt"
-glb_output_filename = "unit_test_output.txt"
+glb_input_filename = "in_add_line_numbers.txt"
+glb_output_filename = "out_add_line_numbers.txt"
 
 
 def count_number_of_lines_in_file(a_file_name):
