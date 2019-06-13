@@ -1,5 +1,6 @@
 import unittest
-from color_basic_preprocessor import add_line_numbers, glb_space_symbol, glb_line_number_increment, glb_line_number_start
+from color_basic_preprocessor import add_line_numbers
+from color_basic_preprocessor import glb_space_symbol, glb_line_number_increment, glb_line_number_start
 import os
 
 glb_new_line_symbol = "\n"
