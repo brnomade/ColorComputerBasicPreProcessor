@@ -1,10 +1,10 @@
 import unittest
-from color_basic_preprocessor import resolve_goto_references, prepare_goto_and_gosub_references
-from color_basic_preprocessor import glb_new_line_symbol, glb_reference_dictionary, glb_no_error_code
+from color_basic_preprocessor import resolve_goto_references, prepare_goto_and_gosub_references, initialise_a_reference_dictionary
+from color_basic_preprocessor import glb_new_line_symbol, glb_no_error_code
 import os
 
-glb_input_filename = "unit_test_input.txt"
-glb_output_filename = "unit_test_output.txt"
+glb_input_filename = "in_resolve_goto_references.txt"
+glb_output_filename = "out_resolve_goto_references.txt"
 
 
 def count_number_of_lines_in_file(a_file_name):
@@ -31,13 +31,13 @@ class TestResolveGotoReferencesTest(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
-            os.remove(glb_input_filename)
-            # print("D")
+            # os.remove(glb_input_filename)
+            print("D")
         else:
             print("can't find file", glb_input_filename, ". will not delete it.")
         if os.path.exists(glb_output_filename):
-            os.remove(glb_output_filename)
-            # print("D")
+            # os.remove(glb_output_filename)
+            print("D")
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
 
@@ -78,10 +78,15 @@ class TestResolveGotoReferencesTest(unittest.TestCase):
         file_handler.write("41 'GOTO _location_22:                                          " + glb_new_line_symbol)
         file_handler.write("42 GOTO  _location_02: ' GOTO _location_22: GOTO _location_22:  " + glb_new_line_symbol)
         file_handler.close()
-        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
+        a_reference_dictionary = initialise_a_reference_dictionary()
+        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
         if error_codes_list[0] == glb_no_error_code:
-            error_codes_list = resolve_goto_references(glb_input_filename, glb_output_filename, glb_reference_dictionary)
+            error_codes_list = resolve_goto_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
             print(error_codes_list)
             self.assertEqual(error_codes_list, [23, 23, 23, 21, 21, 21, 21, 21, 21, 20, 20, 22, 21])
         else:
             self.fail("error on pre-condition method.")
+
+
+if __name__ == '__main__':
+    unittest.main()
