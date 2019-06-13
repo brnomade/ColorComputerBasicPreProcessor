@@ -191,8 +191,11 @@ def present_error_message(a_line, a_line_number, an_error_code):
 
 
 def handle_syntax_error(an_error_code, a_line_number, a_line, an_error_list, a_file_handler):
+    # TODO - potential option to keep the reference as comment and used it as a target or remove the line and use as target the next line
+    param_write_error_line_into_output_file = True
     an_error_list.append(an_error_code)
-    a_file_handler.write(a_line)
+    if param_write_error_line_into_output_file:
+        a_file_handler.write(a_line)
     present_error_message(a_line, a_line_number, an_error_code)
     return an_error_list
 
@@ -223,37 +226,43 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
             if declare_count == 0:
                 output_file_handler.write(a_line)
             elif declare_count > 1:
-                error_list.append(glb_error_declare_multiple)
-                output_file_handler.write(a_line)
-                present_error_message(a_line, line_number, glb_error_declare_multiple)
+                error_list = handle_syntax_error(glb_error_declare_multiple, line_number, a_line, error_list, output_file_handler)
+                # error_list.append(glb_error_declare_multiple)
+                # output_file_handler.write(a_line)
+                # present_error_message(a_line, line_number, glb_error_declare_multiple)
             else:
                 a_line_split = a_line.rpartition(glb_keyword_declare)
                 if glb_comment_symbol in a_line_split[0]:
                     # TODO - potential parameter - remove commented line from output
                     output_file_handler.write(a_line)
                 elif a_line_split[2].strip() == glb_empty_symbol:
-                    error_list.append(glb_error_declare_missing_definition)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_declare_missing_definition)
+                    error_list = handle_syntax_error(glb_error_declare_missing_definition, line_number, a_line, error_list, output_file_handler)
+                    # error_list.append(glb_error_declare_missing_definition)
+                    # output_file_handler.write(a_line)
+                    # present_error_message(a_line, line_number, glb_error_declare_missing_definition)
                 elif glb_open_parenthesis_symbol not in a_line_split[2]:
-                    error_list.append(glb_error_declare_missing_opening_parenthesis)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_declare_missing_opening_parenthesis)
+                    error_list = handle_syntax_error(glb_error_declare_missing_opening_parenthesis, line_number, a_line, error_list, output_file_handler)
+                    # error_list.append(glb_error_declare_missing_opening_parenthesis)
+                    # output_file_handler.write(a_line)
+                    # present_error_message(a_line, line_number, glb_error_declare_missing_opening_parenthesis)
                 elif glb_close_parenthesis_symbol not in a_line_split[2]:
-                    error_list.append(glb_error_declare_missing_closing_parenthesis)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_declare_missing_closing_parenthesis)
+                    error_list = handle_syntax_error(glb_error_declare_missing_closing_parenthesis, line_number, a_line, error_list, output_file_handler)
+                    # error_list.append(glb_error_declare_missing_closing_parenthesis)
+                    # output_file_handler.write(a_line)
+                    # present_error_message(a_line, line_number, glb_error_declare_missing_closing_parenthesis)
                 else:
                     a_procedure_declaration = a_line_split[2].strip()
                     a_procedure_name = a_procedure_declaration.split(glb_open_parenthesis_symbol)[0].strip()
                     if glb_space_symbol in a_procedure_name:
-                        error_list.append(glb_error_declare_contains_invalid_character)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_declare_contains_invalid_character)
+                        error_list = handle_syntax_error(glb_error_declare_contains_invalid_character, line_number, a_line, error_list, output_file_handler)
+                        # error_list.append(glb_error_declare_contains_invalid_character)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_declare_contains_invalid_character)
                     elif a_procedure_name in a_reference_dictionary["declares"].keys():
-                        error_list.append(glb_error_declare_duplicate_definition)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_declare_duplicate_definition)
+                        error_list = handle_syntax_error(glb_error_declare_duplicate_definition, line_number, a_line, error_list, output_file_handler)
+                        # error_list.append(glb_error_declare_duplicate_definition)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_declare_duplicate_definition)
                     else:
                         a_reference_dictionary["declares"][a_procedure_name] = line_number
                         # TODO - potential parameter - add original line as a comment
@@ -263,9 +272,10 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                         if len(a_parameter_list_declaration) > 0:
                             a_list_of_parameters = a_parameter_list_declaration.split(glb_comma_symbol)
                             if len(a_list_of_parameters) > glb_max_available_parameters_for_procedures:
-                                error_list.append(glb_error_declare_parameters_exceeded)
-                                output_file_handler.write(a_line)
-                                present_error_message(a_line, line_number, glb_error_declare_parameters_exceeded)
+                                error_list = handle_syntax_error(glb_error_declare_parameters_exceeded, line_number, a_line, error_list, output_file_handler)
+                                # error_list.append(glb_error_declare_parameters_exceeded)
+                                # output_file_handler.write(a_line)
+                                # present_error_message(a_line, line_number, glb_error_declare_parameters_exceeded)
                             else:
                                 output_file_handler.write("LET ")
                                 numeric_parameter_counter = 0
@@ -310,6 +320,7 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
     # the reference is expected to be at the start of a line
     # reference names cannot contain spaces
     # line numbers are expected to exist on the line
+    # references are expected to be alone on the line. no further code is expected to exist on the same line.
     line_number = 0
     error_list = list()
     #
@@ -328,31 +339,23 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
                     elif a_reference_name[0] == glb_underscore_symbol:
                         if glb_space_symbol in a_reference_name:
                             # scenario - the potential reference is incorrectly named or more code is on the same line
-                            error_list.append(glb_error_gotogosub_contains_invalid_character)
-                            output_file_handler.write(a_line)
-                            present_error_message(a_line, line_number, glb_error_gotogosub_contains_invalid_character)
+                            error_list = handle_syntax_error(glb_error_gotogosub_contains_invalid_character, line_number, a_line, error_list, output_file_handler)
                         elif a_reference_name[-1] == glb_colon_symbol:
                             if a_reference_name in a_reference_dictionary["gotogosub"].keys():
                                 # scenario - the potential reference has been previously used
-                                error_list.append(glb_error_gotogosub_duplicate_reference)
-                                output_file_handler.write(a_line)
-                                present_error_message(a_line, line_number, glb_error_gotogosub_duplicate_reference)
-                            a_reference_dictionary["gotogosub"][a_reference_name] = a_line_number
-                            # TODO - potential option to keep the reference as comment and used it as a target or remove the line and use as target the next line
-                            output_file_handler.write(a_line_number + glb_space_symbol + glb_comment_symbol + a_reference_name + glb_new_line_symbol)
+                                error_list = handle_syntax_error(glb_error_gotogosub_duplicate_reference, line_number, a_line, error_list, output_file_handler)
+                            else:
+                                a_reference_dictionary["gotogosub"][a_reference_name] = a_line_number
+                                output_file_handler.write(a_line_number + glb_space_symbol + glb_comment_symbol + a_reference_name + glb_new_line_symbol)
                         else:
-                            # scenario - the potential reference ends with something different than :
-                            error_list.append(glb_error_gotogosub_missing_terminator)
-                            output_file_handler.write(a_line)
-                            present_error_message(a_line, line_number, glb_error_gotogosub_missing_terminator)
+                            # scenario - the potential reference ends with something different than colon :
+                            error_list = handle_syntax_error(glb_error_gotogosub_missing_terminator, line_number, a_line, error_list, output_file_handler)
                     else:
-                        # scenario - the potential reference starts with something different than _
+                        # scenario - the potential reference starts with something different than underscore _
                         output_file_handler.write(a_line)
                 else:
                     # scenario - the line does not start with a line number
-                    error_list.append(glb_error_gotogosub_missing_line_number)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_gotogosub_missing_line_number)
+                    error_list = handle_syntax_error(glb_error_gotogosub_missing_line_number, line_number, a_line, error_list, output_file_handler)
             else:
                 # scenario - the line is completely empty
                 output_file_handler.write(a_line)
@@ -392,9 +395,10 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                     a_line_split = a_line
                 if a_line_split.count(glb_keyword_goto) > 1:
                     # scenario 10
-                    error_list.append(glb_error_goto_multiple_found)
-                    output_file_handler.write(a_line)
-                    present_error_message(a_line, line_number, glb_error_goto_multiple_found)
+                    error_list = handle_syntax_error(glb_error_goto_multiple_found, line_number, a_line, error_list, output_file_handler)
+                    # error_list.append(glb_error_goto_multiple_found)
+                    # output_file_handler.write(a_line)
+                    # present_error_message(a_line, line_number, glb_error_goto_multiple_found)
                 elif a_line_split.count(glb_keyword_goto) == 1:
                     result = re.search("GOTO(.+?:)?", a_line_split).group(1)
                     # if result is None:
@@ -403,16 +407,18 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                     #     print("regex returns:", result)
                     if result is None:
                         # scenario 6
-                        error_list.append(glb_error_goto_undefined_reference)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_goto_undefined_reference)
+                        error_list = handle_syntax_error(glb_error_goto_undefined_reference, line_number, a_line, error_list, output_file_handler)
+                        # error_list.append(glb_error_goto_undefined_reference)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_goto_undefined_reference)
                     else:
                         a_reference_name = result.strip()
                         if not (a_reference_name[0] == glb_underscore_symbol) or not (a_reference_name[-1] == glb_colon_symbol):
                             # print("found: [" + a_reference_name + "]")
-                            error_list.append(glb_error_goto_malformed_reference_name)
-                            output_file_handler.write(a_line)
-                            present_error_message(a_line, line_number, glb_error_goto_malformed_reference_name)
+                            error_list = handle_syntax_error(glb_error_goto_malformed_reference_name, line_number, a_line, error_list, output_file_handler)
+                            # error_list.append(glb_error_goto_malformed_reference_name)
+                            # output_file_handler.write(a_line)
+                            # present_error_message(a_line, line_number, glb_error_goto_malformed_reference_name)
                         else:
                             if a_reference_name in a_reference_dictionary["gotogosub"].keys():
                                 # scenarios 1,2,3.
@@ -420,9 +426,10 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                             else:
                                 # scenario 7
                                 # print("found: [" + a_reference_name + "]")
-                                error_list.append(glb_error_goto_unknown_reference)
-                                output_file_handler.write(a_line)
-                                present_error_message(a_line, line_number, glb_error_goto_unknown_reference)
+                                error_list = handle_syntax_error(glb_error_goto_unknown_reference, line_number, a_line, error_list, output_file_handler)
+                                # error_list.append(glb_error_goto_unknown_reference)
+                                # output_file_handler.write(a_line)
+                                # present_error_message(a_line, line_number, glb_error_goto_unknown_reference)
             output_file_handler.write(a_line)
     output_file_handler.close()
     if len(error_list) == 0:
@@ -467,22 +474,25 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
                     a_strip_reference_name = a_reference_name.strip()
                     if a_strip_reference_name == glb_empty_symbol:
                         # scenario 6
-                        error_list.append(glb_error_gosub_undefined_reference)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_gosub_undefined_reference)
+                        error_list = handle_syntax_error(glb_error_gosub_undefined_reference, line_number, a_line,error_list, output_file_handler)
+                        # error_list.append(glb_error_gosub_undefined_reference)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_gosub_undefined_reference)
                     elif not (a_strip_reference_name[0] == glb_underscore_symbol) or not (a_strip_reference_name[-1] == glb_colon_symbol):
-                        error_list.append(glb_error_gosub_malformed_reference_name)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_gosub_malformed_reference_name)
+                        error_list = handle_syntax_error(glb_error_gosub_malformed_reference_name, line_number, a_line,error_list, output_file_handler)
+                        # error_list.append(glb_error_gosub_malformed_reference_name)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_gosub_malformed_reference_name)
                     elif a_strip_reference_name in a_reference_dictionary["gotogosub"].keys():
                         # scenarios 1,2,3.
                         a_line = a_line.replace(a_strip_reference_name, a_reference_dictionary["gotogosub"][a_strip_reference_name], 1)
                     else:
                         # scenario 7
                         # print("found: [" + a_reference_name + "]")
-                        error_list.append(glb_error_gosub_unknown_reference)
-                        output_file_handler.write(a_line)
-                        present_error_message(a_line, line_number, glb_error_gosub_unknown_reference)
+                        error_list = handle_syntax_error(glb_error_gosub_unknown_reference, line_number, a_line,error_list, output_file_handler)
+                        # error_list.append(glb_error_gosub_unknown_reference)
+                        # output_file_handler.write(a_line)
+                        # present_error_message(a_line, line_number, glb_error_gosub_unknown_reference)
             output_file_handler.write(a_line)
     output_file_handler.close()
     if len(error_list) == 0:
