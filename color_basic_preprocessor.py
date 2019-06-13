@@ -375,7 +375,7 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                         else:
                             if a_reference_name in a_reference_dictionary["gotogosub"].keys():
                                 # scenarios 1,2,3.
-                                a_line = a_line.replace(a_reference_name, a_reference_dictionary["gotogosub"][a_reference_name],1)
+                                a_line = a_line.replace(a_reference_name, a_reference_dictionary["gotogosub"][a_reference_name], 1)
                             else:
                                 # scenario 7
                                 # print("found: [" + a_reference_name + "]")
