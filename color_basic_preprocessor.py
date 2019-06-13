@@ -120,11 +120,12 @@ glb_error_gosub_undefined_reference = 30
 glb_error_gosub_unknown_reference = 31
 glb_error_gosub_malformed_reference_name = 32
 
-#
-glb_reference_dictionary = dict()
-glb_reference_dictionary["declares"] = dict()
-glb_reference_dictionary["gotogosub"] = dict()
-#
+
+def initialise_a_reference_dictionary():
+    a_reference_dictionary = dict()
+    a_reference_dictionary["declares"] = dict()
+    a_reference_dictionary["gotogosub"] = dict()
+    return a_reference_dictionary
 
 
 def present_script_section(a_section_name: str):
@@ -573,8 +574,10 @@ def main():
     #
     my_status = [glb_no_error_code]
     #
+    glb_reference_dictionary = initialise_a_reference_dictionary()
+    #
     source_filename_without_extension = input_arguments.input_file.split(".")[0]
-
+    #
     # run the BPP preprocessor
     input_filename = input_arguments.input_file
     output_filename = source_filename_without_extension + ".st1"
@@ -606,10 +609,6 @@ def main():
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st5"
         my_status = prepare_goto_and_gosub_references(input_filename, output_filename, glb_reference_dictionary)
-
-    print(glb_reference_dictionary)
-    exit()
-
 
     # resolve goto references
     if my_status[0] == glb_no_error_code:
