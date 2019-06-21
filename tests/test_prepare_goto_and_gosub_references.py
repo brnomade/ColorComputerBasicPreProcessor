@@ -5,7 +5,7 @@ import os
 
 glb_input_filename = "in_prepare_goto_and_gosub_references.txt"
 glb_output_filename = "out_prepare_goto_and_gosub_references.txt"
-
+param_remove_file_after_test = True
 
 def count_number_of_lines_in_file(a_file_name):
     counter = 0
@@ -31,11 +31,13 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(glb_input_filename):
-            os.remove(glb_input_filename)
+            if param_remove_file_after_test:
+                os.remove(glb_input_filename)
         else:
             print("can't find file", glb_input_filename, ". will not delete it.")
         if os.path.exists(glb_output_filename):
-            os.remove(glb_output_filename)
+            if param_remove_file_after_test:
+                os.remove(glb_output_filename)
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
 
