@@ -35,7 +35,6 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         else:
             print("can't find file", glb_input_filename, ". will not delete it.")
         if os.path.exists(glb_output_filename):
-            # print("not removing")
             os.remove(glb_output_filename)
         else:
             print("can't find file", glb_output_filename, ". will not delete it.")
@@ -71,7 +70,6 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         file_handler.close()
         a_reference_dictionary = initialise_a_reference_dictionary()
         error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
-        print(error_codes_list, a_reference_dictionary)
         self.assertEqual(a_reference_dictionary["gotogosub"],
                          {'_correct:' : {'file_line': '17'}, '_correct1:': {'file_line': '18'},
                           '_correct2:': {'file_line': '19'}, '_correct3:': {'file_line': '20'},
