@@ -69,17 +69,17 @@ glb_no_error_code = 0
 glb_error_messages = ["no errors found",
                       "multiple DECLARE keywords used on same line.",
                       "missing procedure definition after DECLARE keyword.",
-                      "missing opening parentheses in procedure definition.",
-                      "missing closing parentheses in procedure definition.",
+                      "missing parameter in procedure definition.",
+                      "parameter is already used in procedure declaration.",
                       "number of parameters in procedure exceeds " + str(glb_max_available_parameters_for_procedures) + ".",
                       "duplicate procedure name found.",
                       "procedure name contains invalid character.",
                       "syntax error on procedure declaration",
                       "",
                       "duplicate GOTO/GOSUB reference name found.",
-                      "missing terminator for GOTO/GOSUB reference name.",
-                      "missing line number before GOTO/GOSUB reference.",
-                      "syntax error in GOTO/GOSUB reference name.",
+                      "",
+                      "",
+                      "",
                       "",
                       "",
                       "",
@@ -128,8 +128,8 @@ glb_error_messages = ["no errors found",
 # DECLARE related error codes
 glb_error_declare_multiple = 1
 glb_error_declare_missing_definition = 2
-glb_error_declare_missing_opening_parenthesis = 3
-glb_error_declare_missing_closing_parenthesis = 4
+glb_error_declare_missing_parameter = 3
+glb_error_declare_parameter_already_used = 4
 glb_error_declare_parameters_exceeded = 5
 glb_error_declare_duplicate_definition = 6
 glb_error_declare_contains_invalid_character = 7
@@ -137,9 +137,6 @@ glb_error_declare_invalid_syntax = 8
 
 # GOTO / GOSUB definition related error codes
 glb_error_gotogosub_duplicate_reference = 10
-glb_error_gotogosub_missing_terminator = 11
-glb_error_gotogosub_missing_line_number = 12
-glb_error_gotogosub_contains_invalid_character = 13
 
 # GOTO resolution related error codes
 glb_error_goto_multiple_found = 20
@@ -311,14 +308,17 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                 # scenario - only one DECLARE keyword per line is acceptable
                 error_list = handle_syntax_error(glb_error_declare_multiple, line_number, a_line, error_list, output_file_handler)
             else:
-                result = re.search("(DECLARE)\s+([a-zA-Z_0-9]+)\s*(\()([a-zA-Z_0-9\,\s\$]*)(\)\s*:)", a_line_strip)
+                result = re.search("(^DECLARE)\s+([a-zA-Z_0-9]+)\s*(\()([a-zA-Z_0-9\,\s\$]*)(\)\s*:)", a_line_strip)
                 if result is None:
                     error_list = handle_syntax_error(glb_error_declare_invalid_syntax, line_number, a_line, error_list, output_file_handler)
                 else:
                     a_reserved_word = result.group(1)
                     a_procedure_name = result.group(2).strip()
                     a_prefix = result.group(3)
-                    a_parameters_list = result.group(4).split(glb_comma_symbol)
+                    if result.group(4).strip() == glb_empty_symbol:
+                        a_parameters_list = []
+                    else:
+                        a_parameters_list = result.group(4).strip().split(glb_comma_symbol)
                     a_sufix = result.group(5)
                     if a_procedure_name in a_reference_dictionary["declares"].keys():
                         error_list = handle_syntax_error(glb_error_declare_duplicate_definition, line_number, a_line, error_list, output_file_handler)
@@ -326,22 +326,31 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                         if len(a_parameters_list) > glb_max_available_parameters_for_procedures:
                             error_list = handle_syntax_error(glb_error_declare_parameters_exceeded, line_number, a_line, error_list, output_file_handler)
                         else:
+                            # comment the declaration line
                             output_file_handler.write(glb_keyword_end + glb_space_symbol + glb_comment_symbol + glb_space_symbol + a_line)
+                            # include the declared procedure in the dictionary
                             a_reference_dictionary["declares"][a_procedure_name] = {"line": line_number, "parameters": []}
+                            # process defined parameters
                             a_new_line = glb_empty_symbol
                             for a_parameter in a_parameters_list:
                                 a_parameter = a_parameter.strip()
                                 if not a_parameter.strip() == glb_empty_symbol:
-                                    if a_parameter[-1] == glb_dollar_symbol:
+                                    if a_parameter in a_reference_dictionary["declares"][a_procedure_name]["parameters"]:
+                                        error_list = handle_syntax_error(glb_error_declare_parameter_already_used, line_number, a_line, error_list, output_file_handler)
+                                    elif a_parameter[-1] == glb_dollar_symbol:
                                         a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_double_quote_symbol + glb_double_quote_symbol + glb_colon_symbol
                                         a_reference_dictionary["declares"][a_procedure_name]["parameters"].append(a_parameter)
                                     else:
                                         a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_number_0_symbol + glb_colon_symbol
                                         a_reference_dictionary["declares"][a_procedure_name]["parameters"].append(a_parameter)
+                                else:
+                                    error_list = handle_syntax_error(glb_error_declare_missing_parameter, line_number, a_line, error_list, output_file_handler)
+                            # output the list of parameters assignment
                             if not a_new_line.strip() == glb_empty_symbol:
                                 output_file_handler.write(a_new_line + glb_new_line_symbol)
                                 line_number = line_number + 1
-                            output_file_handler.write(glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_new_line_symbol)
+                            # output the gosub reference
+                            output_file_handler.write(glb_underscore_symbol + str(line_number) + glb_underscore_symbol + glb_keyword_declare + glb_underscore_symbol  + a_procedure_name + glb_colon_symbol + glb_new_line_symbol)
                             line_number = line_number + 1
                             a_reference_dictionary["declares"][a_procedure_name]["line"] = line_number
     output_file_handler.close()
@@ -460,11 +469,9 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
             a_line_strip = strip_comment_from_line(a_line)
             if not a_line_strip == glb_empty_symbol:
                 # scenario - the line is not empty
-                result = re.search("(^_)([a-zA-Z_0-9]+)(:)", a_line_strip)
+                result = re.search("(^\s*)(_[a-zA-Z_0-9]+:)", a_line_strip)
                 if result is not None:
-                    a_prefix = result.group(1).strip()
                     a_reference_name = result.group(2).strip()
-                    a_sufix = result.group(3).strip()
                     if a_reference_name in a_reference_dictionary["gotogosub"].keys():
                         # scenario - the potential reference has been previously used
                         error_list = handle_syntax_error(glb_error_gotogosub_duplicate_reference, line_number, a_line, error_list, output_file_handler)
@@ -520,12 +527,9 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                 else:
                     result = re.search("(GOTO)\s+(\_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
                     if result is not None:
-                        a_reserved_word = result.group(1)
-                        a_prefix = result.group(2).strip()
-                        a_reference_name = result.group(3).strip()
-                        a_sufix = result.group(4).strip()
+                        a_reference_name = result.group(2).strip() + result.group(3).strip() + result.group(4).strip()
                         if a_reference_name in a_reference_dictionary["gotogosub"].keys():
-                            a_line = a_line.replace(a_prefix + a_reference_name + a_sufix, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]), 1)
+                            a_line = a_line.replace(a_reference_name, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]), 1)
                         else:
                             # scenario - target is not empty but has not been declared previously
                             error_list = handle_syntax_error(glb_error_goto_unknown_reference, line_number, a_line, error_list, output_file_handler)
@@ -548,12 +552,9 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
             if glb_keyword_gosub in a_line_strip:
                 result = re.finditer("(GOSUB)\s+(\_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
                 for a_reference in result:
-                    a_reserved_word = a_reference.group(1)
-                    a_prefix = a_reference.group(2).strip()
-                    a_reference_name = a_reference.group(3).strip()
-                    a_sufix = a_reference.group(4).strip()
+                    a_reference_name = a_reference.group(2).strip() + a_reference.group(3).strip() + a_reference.group(4).strip()
                     if a_reference_name in a_reference_dictionary["gotogosub"].keys():
-                        a_line = a_line.replace(a_prefix + a_reference_name + a_sufix, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]))
+                        a_line = a_line.replace(a_reference_name, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]))
                     else:
                         # scenario - target is not empty but has not been declared previously
                         error_list = handle_syntax_error(glb_error_gosub_unknown_reference, line_number, a_line, error_list, output_file_handler)
@@ -646,6 +647,7 @@ def main():
         output_filename = input_arguments.output_file
         final_pass(input_filename, output_filename)
 
+    print(glb_reference_dictionary)
 
 if __name__ == "__main__":
     # execute only if run as a script
