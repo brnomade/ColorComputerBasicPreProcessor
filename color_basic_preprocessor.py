@@ -22,25 +22,25 @@ glb_msg_prefix_ok = "Succeeded to"
 #                           " %(funcName)s | %(message)s",
 #                    datefmt='%m/%d/%Y %I:%M:%S %p')
 #
-glb_available_numeric_references = deque([])
-for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
-    if not item[0].isdigit():
-        glb_available_numeric_references.append(item[0] + item[1])
-#
-glb_available_string_references = deque([])
-for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
-    if not item[0].isdigit():
-        glb_available_string_references.append(item[0] + item[1] + "$")
-#
 glb_max_available_parameters_for_procedures = 10
 glb_line_number_start = 10
 glb_line_number_increment = 5
 #
-glb_available_procedure_numeric_parameters = list()
-glb_available_procedure_string_parameters = list()
-for counter in range(0, glb_max_available_parameters_for_procedures):
-    glb_available_procedure_numeric_parameters.append(glb_available_numeric_references.pop())
-    glb_available_procedure_string_parameters.append(glb_available_string_references.pop())
+# glb_available_numeric_references = deque([])
+# for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+#     if not item[0].isdigit():
+#         glb_available_numeric_references.append(item[0] + item[1])
+#
+# glb_available_string_references = deque([])
+# for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+#     if not item[0].isdigit():
+#         glb_available_string_references.append(item[0] + item[1] + "$")
+#
+# glb_available_procedure_numeric_parameters = list()
+# glb_available_procedure_string_parameters = list()
+# for counter in range(0, glb_max_available_parameters_for_procedures):
+#     glb_available_procedure_numeric_parameters.append(glb_available_numeric_references.pop())
+#     glb_available_procedure_string_parameters.append(glb_available_string_references.pop())
 #
 
 glb_keyword_goto = "GOTO"
@@ -108,11 +108,11 @@ glb_error_messages = ["no errors found",
                       "",
                       "Variable undefined.",
                       "Variable unknown.",
-                      "Syntax error on variable name.",
+                      "Syntax error on variable declaration.",
                       "maximum number of string variables exceeded",
                       "maximum number of numeric variables exceeded",
                       "duplicate variable name found.",
-                      "",
+                      "incorrect variable name. variable name must be alpha numeric.",
                       "",
                       "",
                       "",
@@ -156,6 +156,7 @@ glb_error_variable_malformed = 42
 glb_error_variable_string_limit_reached = 43
 glb_error_variable_numeric_limit_reached = 44
 glb_error_variable_duplicate_reference = 45
+glb_error_variable_numeric_named = 46
 
 # CALL related error codes
 glb_error_call_multiple = 50
@@ -173,6 +174,22 @@ def initialise_a_reference_dictionary():
     a_reference_dictionary["gotogosub"] = dict()
     a_reference_dictionary["variables"] = dict()
     return a_reference_dictionary
+
+
+def initialise_available_numeric_references_list():
+    a_collection = deque([])
+    for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+        if not item[0].isdigit():
+            a_collection.append(item[0] + item[1])
+    return a_collection
+
+
+def initialise_available_string_references_list():
+    a_collection = deque([])
+    for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+        if not item[0].isdigit():
+            a_collection.append(item[0] + item[1] + "$")
+    return a_collection
 
 
 def present_script_section(a_section_name: str):
@@ -337,11 +354,13 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                                 if not a_parameter.strip() == glb_empty_symbol:
                                     if a_parameter in a_reference_dictionary["declares"][a_procedure_name]["parameters"]:
                                         error_list = handle_syntax_error(glb_error_declare_parameter_already_used, line_number, a_line, error_list, output_file_handler)
-                                    elif a_parameter[-1] == glb_dollar_symbol:
-                                        a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_double_quote_symbol + glb_double_quote_symbol + glb_colon_symbol
-                                        a_reference_dictionary["declares"][a_procedure_name]["parameters"].append(a_parameter)
+                                    # elif a_parameter[-1] == glb_dollar_symbol:
+                                    #    # a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_double_quote_symbol + glb_double_quote_symbol + glb_colon_symbol
+                                    #    a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_colon_symbol
+                                    #    a_reference_dictionary["declares"][a_procedure_name]["parameters"].append(a_parameter)
                                     else:
-                                        a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_number_0_symbol + glb_colon_symbol
+                                        # a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_equal_symbol + glb_number_0_symbol + glb_colon_symbol
+                                        a_new_line = a_new_line + glb_keyword_let + glb_space_symbol + a_parameter + glb_colon_symbol
                                         a_reference_dictionary["declares"][a_procedure_name]["parameters"].append(a_parameter)
                                 else:
                                     error_list = handle_syntax_error(glb_error_declare_missing_parameter, line_number, a_line, error_list, output_file_handler)
@@ -412,7 +431,7 @@ def process_procedure_calling(an_input_file_name, an_output_file_name, a_referen
     return error_list
 
 
-def prepare_variables_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
+def prepare_variables_references(an_input_file_name, an_output_file_name, a_reference_dictionary, a_numeric_variables_list, a_string_variables_list):
     line_number = 0
     error_list = list()
     #
@@ -423,28 +442,36 @@ def prepare_variables_references(an_input_file_name, an_output_file_name, a_refe
             line_number = line_number + 1
             a_line_strip = strip_comment_from_line(a_line)
             if "LET" in a_line_strip:
-                result = re.finditer("(LET)\s+([a-zA-Z_0-9$]+)\s*(=|<|>|AND|<=|>=)", a_line_strip)
-                if result is None:
-                    error_list = handle_syntax_error(glb_error_variable_malformed, line_number, a_line, error_list, output_file_handler)
-                else:
-                    for a_reference in result:
-                        a_reserved_word = a_reference.group(1).strip()
-                        a_variable_name = a_reference.group(2).strip()
-                        an_operator = a_reference.group(3).strip()
-                        if a_variable_name == glb_empty_symbol:
-                            error_list = handle_syntax_error(glb_error_variable_malformed, line_number, a_line, error_list, output_file_handler)
-                        elif a_variable_name in a_reference_dictionary["variables"].keys():
-                            error_list = handle_syntax_error(glb_error_variable_duplicate_reference, line_number, a_line, error_list, output_file_handler)
-                        elif a_variable_name[-1] == "$":
-                            if not glb_available_string_references:
-                                error_list = handle_syntax_error(glb_error_variable_string_limit_reached, line_number, a_line, error_list, output_file_handler)
-                            else:
-                                a_reference_dictionary["variables"][a_variable_name] = glb_available_string_references.popleft()
+                result = re.finditer("(LET)\s+([a-zA-Z_0-9$]+)\s*(:)", a_line_strip)
+                a_reference = None
+                for a_reference in result:
+                    a_reserved_word = a_reference.group(1).strip()
+                    a_variable_name = a_reference.group(2).strip()
+                    an_operator = a_reference.group(3).strip()
+                    if a_variable_name == glb_empty_symbol:
+                        # scenario - a variable name must not be empty
+                        error_list = handle_syntax_error(glb_error_variable_malformed, line_number, a_line, error_list, output_file_handler)
+                    elif a_variable_name.rstrip("$").isnumeric():
+                        # scenario - a variable name must be alphanumeric
+                        error_list = handle_syntax_error(glb_error_variable_numeric_named, line_number, a_line, error_list, output_file_handler)
+                    elif a_variable_name in a_reference_dictionary["variables"].keys():
+                        # scenario - a variable name must be unique
+                        error_list = handle_syntax_error(glb_error_variable_duplicate_reference, line_number, a_line, error_list, output_file_handler)
+                    elif a_variable_name[-1] == "$":
+                        if not a_string_variables_list:
+                            # scenario - number of variables declared exceeds the limit
+                            error_list = handle_syntax_error(glb_error_variable_string_limit_reached, line_number, a_line, error_list, output_file_handler)
                         else:
-                            if not glb_available_numeric_references:
-                                error_list = handle_syntax_error(glb_error_variable_numeric_limit_reached, line_number, a_line, error_list, output_file_handler)
-                            else:
-                                a_reference_dictionary["variables"][a_variable_name] = glb_available_numeric_references.popleft()
+                            a_reference_dictionary["variables"][a_variable_name] = a_string_variables_list.popleft()
+                    else:
+                        if not a_numeric_variables_list:
+                            # scenario - number of variables declared exceeds the limit
+                            error_list = handle_syntax_error(glb_error_variable_numeric_limit_reached, line_number, a_line, error_list, output_file_handler)
+                        else:
+                            a_reference_dictionary["variables"][a_variable_name] = a_numeric_variables_list.popleft()
+                if a_reference is None:
+                    # scenario - the line contains a LET statement but it does not follow a valid syntax
+                    error_list = handle_syntax_error(glb_error_variable_malformed, line_number, a_line, error_list, output_file_handler)
             output_file_handler.write(a_line)
     output_file_handler.close()
     if len(error_list) == 0:
@@ -582,6 +609,19 @@ def main():
     my_status = [glb_no_error_code]
     #
     glb_reference_dictionary = initialise_a_reference_dictionary()
+    glb_available_numeric_references = initialise_available_numeric_references_list()
+    glb_available_string_references = initialise_available_string_references_list()
+    #
+    glb_available_numeric_references = deque([])
+    for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+        if not item[0].isdigit():
+            glb_available_numeric_references.append(item[0] + item[1])
+    #
+    glb_available_string_references = deque([])
+    for item in itertools.product(string.ascii_uppercase + string.digits, repeat=2):
+        if not item[0].isdigit():
+            glb_available_string_references.append(item[0] + item[1] + "$")
+
     #
     source_filename_without_extension = input_arguments.input_file.split(".")[0]
     #
@@ -609,7 +649,7 @@ def main():
     if my_status[0] == glb_no_error_code:
         input_filename = output_filename
         output_filename = source_filename_without_extension + ".st4"
-        my_status = prepare_variables_references(input_filename, output_filename, glb_reference_dictionary)
+        my_status = prepare_variables_references(input_filename, output_filename, glb_reference_dictionary, glb_available_numeric_references, glb_available_string_references)
 
     # prepare goto and gosub references
     if my_status[0] == glb_no_error_code:
