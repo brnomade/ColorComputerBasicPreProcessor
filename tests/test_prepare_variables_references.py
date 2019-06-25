@@ -1,7 +1,6 @@
 import unittest
 from color_basic_preprocessor import initialise_a_reference_dictionary, initialise_available_numeric_references_list, initialise_available_string_references_list, prepare_variables_references
 from color_basic_preprocessor import glb_new_line_symbol
-from collections import deque
 import os
 
 glb_input_filename = "in_prepare_variables_references.txt"
