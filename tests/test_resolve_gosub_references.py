@@ -91,7 +91,7 @@ class TestResolveGosubReferences(unittest.TestCase):
         error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
         if error_codes_list[0] == glb_no_error_code:
             error_codes_list = resolve_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
-            self.assertEqual(error_codes_list, [31,31])
+            self.assertEqual(error_codes_list, [31, 31])
         else:
             self.fail("error on pre-condition method.")
 
