@@ -27,7 +27,7 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
             print("can't find file", glb_output_filename, ". will not delete it.")
 
     def test_scenario_1(self):
-        # file is empty, file has empty lines, file has lines with only spaces
+        # file is empty, file has empty lines, file has lines with only spaces, file has no procedures declared
         file_handler = open(glb_input_filename, "w")
         file_handler.write("")
         file_handler.write(glb_new_line_symbol)
