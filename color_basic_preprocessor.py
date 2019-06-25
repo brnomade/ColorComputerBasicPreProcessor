@@ -424,7 +424,7 @@ def process_procedure_calling(an_input_file_name, an_output_file_name, a_referen
                                     error_list = handle_syntax_error(glb_error_call_parameters_type_error_numeric, line_number, a_line, error_list, output_file_handler)
                                 else:
                                     a_new_line = a_new_line + a_parameter + glb_equal_symbol + a_value + glb_colon_symbol
-                            output_file_handler.write( a_new_line + "GOSUB" + glb_space_symbol + glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_space_symbol + glb_comment_symbol + a_line)
+                            output_file_handler.write(a_new_line + "GOSUB" + glb_space_symbol + glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_space_symbol + glb_comment_symbol + a_line)
     output_file_handler.close()
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
@@ -512,30 +512,30 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
     return error_list
 
 
-def resolve_variables_references( an_input_file_name, an_output_file_name, a_reference_dictionary ):
-        error_list = list()
-        #
-        output_file_handler = open(an_output_file_name, "w")
-        #
-        joined_variables = '|'.join(map(re.escape, a_reference_dictionary["variables"]))
-        rc = re.compile("(\s|=|:|\+|\*|\-|\/|\)|\(|^)(" + joined_variables + ")(\s|=|:|\+|\*|\-|\/|\)|\,|\n)")
-        #
-        with open(an_input_file_name, "r") as input_file_handler:
-            for a_line in input_file_handler:
-                # scenario - identify if the keyword is located to the left of the comment symbol.
-                position_of_comment_symbol = a_line.find(glb_comment_symbol)
-                a_match = rc.search(a_line)
-                while a_match is not None:
-                    if position_of_comment_symbol == -1 or (a_match.end(2) < position_of_comment_symbol):
-                        a_line = "".join((a_line[:a_match.start(2)], a_reference_dictionary["variables"][a_match.group(2)], a_line[a_match.end(2):]))
-                        a_match = rc.search(a_line)
-                    else:
-                        a_match = None
-                output_file_handler.write(a_line)
-        output_file_handler.close()
-        if len(error_list) == 0:
-            error_list.append(glb_no_error_code)
-        return error_list
+def resolve_variables_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
+    error_list = list()
+    #
+    output_file_handler = open(an_output_file_name, "w")
+    #
+    joined_variables = '|'.join(map(re.escape, a_reference_dictionary["variables"]))
+    rc = re.compile("(\s|=|:|\+|\*|\-|\/|\)|\(|^)(" + joined_variables + ")(\s|=|:|\+|\*|\-|\/|\)|\,|\n)")
+    #
+    with open(an_input_file_name, "r") as input_file_handler:
+        for a_line in input_file_handler:
+            # scenario - identify if the keyword is located to the left of the comment symbol.
+            position_of_comment_symbol = a_line.find(glb_comment_symbol)
+            a_match = rc.search(a_line)
+            while a_match is not None:
+                if position_of_comment_symbol == -1 or (a_match.end(2) < position_of_comment_symbol):
+                    a_line = "".join((a_line[:a_match.start(2)], a_reference_dictionary["variables"][a_match.group(2)], a_line[a_match.end(2):]))
+                    a_match = rc.search(a_line)
+                else:
+                    a_match = None
+            output_file_handler.write(a_line)
+    output_file_handler.close()
+    if len(error_list) == 0:
+        error_list.append(glb_no_error_code)
+    return error_list
 
 
 def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
