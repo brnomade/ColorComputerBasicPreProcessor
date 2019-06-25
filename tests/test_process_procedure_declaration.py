@@ -150,14 +150,5 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
                          a_dictionary["declares"])
 
 
-    def x_test_scenario_10(self):
-        a_reference_dictionary = initialise_a_reference_dictionary()
-        error_codes_list = process_procedure_declaration(glb_input_filename, glb_output_filename, a_dictionary)
-        print(a_dictionary)
-        print(an_error_list)
-        self.assertEqual(an_error_list, [2, 1, 1, 3, 4, 4, 3, 3, 7, 7, 5, 7, 5, 6, 7, 6])
-        self.assertEqual({'a_name_1': 10, 'a_name_2': 11, 'a_name_3': 12, 'a_name6': 15, 'a_name7': 16, 'a_name8': 18, 'a_procedure_with_a_very_very_very_very_very_long_name': 20, 'y': 22}, a_reference_dictionary["declares"])
-
-
 if __name__ == '__main__':
     unittest.main()
