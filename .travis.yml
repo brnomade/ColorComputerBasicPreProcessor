@@ -2,6 +2,8 @@ dist: xenial
 language: python
 python:
   - "3.7"
+install:
+  - pip install python-coveralls
 script:
   - python -m unittest tests/test_add_line_numbers.py
   - python -m unittest tests/test_remove_empty_lines.py
@@ -11,4 +13,5 @@ script:
   - python -m unittest tests/test_resolve_gosub_references.py
   - python -m unittest tests/test_resolve_goto_references.py
   - python -m unittest tests/test_prepare_variables_references.py
-  
+after_success:
+  - coveralls
