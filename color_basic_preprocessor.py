@@ -123,6 +123,7 @@ glb_error_messages = ["no errors found",
                       "parameter type mismatch in procedure call, string expected.",
                       "syntax error on procedure call",
                       "parameter type mismatch in procedure call, numeric expected.",
+                      "parameter expected but none found."
                       ]
 
 # DECLARE related error codes
@@ -166,6 +167,7 @@ glb_error_call_parameters_numbers_mismatch = 53
 glb_error_call_parameters_type_error_string = 54
 glb_error_call_invalid_syntax = 55
 glb_error_call_parameters_type_error_numeric = 56
+glb_error_call_parameter_missing = 57
 
 
 def initialise_a_reference_dictionary():
@@ -398,13 +400,12 @@ def process_procedure_calling(an_input_file_name, an_output_file_name, a_referen
             else:
                 result = re.search("(CALL)\s+([a-zA-Z_0-9]+)\s*(\()([a-zA-Z_0-9\$\"\,\s]*)(\)\s*)", a_line_strip)
                 if result is None:
-                    print(result)
                     error_list = handle_syntax_error(glb_error_call_invalid_syntax, line_number, a_line, error_list, output_file_handler)
                 else:
                     a_reserved_word = result.group(1)
                     a_procedure_name = result.group(2).strip()
                     a_prefix = result.group(3)
-                    a_parameters_list = result.group(4).split(glb_comma_symbol)
+                    a_parameters_list = result.group(4).strip().split(glb_comma_symbol)
                     a_sufix = result.group(5)
                     if a_procedure_name not in a_reference_dictionary["declares"].keys():
                         error_list = handle_syntax_error(glb_error_call_to_undeclared_procedure, line_number, a_line, error_list, output_file_handler)
@@ -416,14 +417,17 @@ def process_procedure_calling(an_input_file_name, an_output_file_name, a_referen
                         else:
                             a_new_line = glb_empty_symbol
                             for parameter_index in range(0, len(a_parameters_list)):
-                                a_parameter = a_reference_dictionary["declares"][a_procedure_name]["parameters"][parameter_index].strip()
-                                a_value = a_parameters_list[parameter_index].strip()
-                                if a_parameter[-1] == glb_dollar_symbol and (a_value.isnumeric() or a_value[-1] not in [glb_dollar_symbol, glb_double_quote_symbol]):
-                                    error_list = handle_syntax_error(glb_error_call_parameters_type_error_string, line_number, a_line, error_list, output_file_handler)
-                                elif (not a_parameter[-1] == glb_dollar_symbol) and (not a_value.isnumeric()) and (a_value[-1] in [glb_dollar_symbol, glb_double_quote_symbol]):
-                                    error_list = handle_syntax_error(glb_error_call_parameters_type_error_numeric, line_number, a_line, error_list, output_file_handler)
+                                if a_parameters_list[parameter_index].strip() == glb_empty_symbol:
+                                    error_list = handle_syntax_error(glb_error_call_parameter_missing, line_number, a_line, error_list, output_file_handler)
                                 else:
-                                    a_new_line = a_new_line + a_parameter + glb_equal_symbol + a_value + glb_colon_symbol
+                                    a_parameter = a_reference_dictionary["declares"][a_procedure_name]["parameters"][parameter_index].strip()
+                                    a_value = a_parameters_list[parameter_index].strip()
+                                    if a_parameter[-1] == glb_dollar_symbol and (a_value.isnumeric() or a_value[-1] not in [glb_dollar_symbol, glb_double_quote_symbol]):
+                                        error_list = handle_syntax_error(glb_error_call_parameters_type_error_string, line_number, a_line, error_list, output_file_handler)
+                                    elif (not a_parameter[-1] == glb_dollar_symbol) and (not a_value.isnumeric()) and (a_value[-1] in [glb_dollar_symbol, glb_double_quote_symbol]):
+                                        error_list = handle_syntax_error(glb_error_call_parameters_type_error_numeric, line_number, a_line, error_list, output_file_handler)
+                                    else:
+                                        a_new_line = a_new_line + a_parameter + glb_equal_symbol + a_value + glb_colon_symbol
                             output_file_handler.write(a_new_line + "GOSUB" + glb_space_symbol + glb_underscore_symbol + a_procedure_name + glb_colon_symbol + glb_space_symbol + glb_comment_symbol + a_line)
     output_file_handler.close()
     if len(error_list) == 0:
@@ -578,6 +582,7 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
             a_line_strip = strip_comment_from_line(a_line)
             if glb_keyword_gosub in a_line_strip:
                 result = re.finditer("(GOSUB)\s+(\_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
+                # TODO : DO I need to handle the scenario where the for is not executed? See the prepare_variable_references_code.
                 for a_reference in result:
                     a_reference_name = a_reference.group(2).strip() + a_reference.group(3).strip() + a_reference.group(4).strip()
                     if a_reference_name in a_reference_dictionary["gotogosub"].keys():
