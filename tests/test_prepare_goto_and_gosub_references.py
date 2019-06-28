@@ -74,7 +74,7 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         a_reference_dictionary = initialise_a_reference_dictionary()
         error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
         self.assertEqual(a_reference_dictionary["gotogosub"],
-                         {'_correct:' : {'file_line': '18'}, '_correct1:': {'file_line': '19'},
+                         {'_correct:': {'file_line': '18'}, '_correct1:': {'file_line': '19'},
                           '_correct2:': {'file_line': '20'}, '_correct3:': {'file_line': '21'},
                           '_correct4:': {'file_line': '22'}, '_correct5:': {'file_line': '23'}})
         self.assertEqual(error_codes_list, [10])

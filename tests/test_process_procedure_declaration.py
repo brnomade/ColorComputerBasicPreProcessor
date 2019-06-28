@@ -40,7 +40,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         self.assertEqual(an_error_list, [0])
         self.assertEqual({}, a_dictionary["declares"])
 
-
     def test_scenario_2(self):
         # DECLARE count on the line is larger than 1
         file_handler = open(glb_input_filename, "w")
@@ -53,7 +52,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         an_error_list = process_procedure_declaration(glb_input_filename, glb_output_filename, a_dictionary)
         self.assertEqual(an_error_list, [1])
         self.assertEqual({'w': {'line': 6, 'parameters': ['a']}}, a_dictionary["declares"])
-
 
     def test_scenario_3(self):
         # Syntax errors
@@ -84,7 +82,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         self.assertEqual(an_error_list, [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8])
         self.assertEqual({}, a_dictionary["declares"])
 
-
     def test_scenario_4(self):
         # duplicated procedure declaration
         file_handler = open(glb_input_filename, "w")
@@ -95,7 +92,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         an_error_list = process_procedure_declaration(glb_input_filename, glb_output_filename, a_dictionary)
         self.assertEqual(an_error_list, [6])
         self.assertEqual({'z': {'line': 3, 'parameters': ['a']}}, a_dictionary["declares"])
-
 
     def test_scenario_5(self):
         # maximum number of parameters exceeded
@@ -111,8 +107,7 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         self.assertEqual({'y': {'line': 4, 'parameters': ['v1', 'v2', 'v3', 'v4', 'v5', 'v6$', 'v7', 'v8', 'v9', 'v10']},
                           'z': {'line': 7, 'parameters': ['v1']},
                           'w': {'line': 9, 'parameters': []}},
-                        a_dictionary["declares"])
-
+                         a_dictionary["declares"])
 
     def test_scenario_6(self):
         # missing parameters
@@ -130,7 +125,6 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
                           'z': {'line': 8, 'parameters': ['v1']},
                           'w': {'line': 10, 'parameters': []}},
                          a_dictionary["declares"])
-
 
     def test_scenario_7(self):
         # missing parameters

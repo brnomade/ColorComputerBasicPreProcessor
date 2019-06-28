@@ -141,5 +141,6 @@ class TestPrepareVariablesReferences(unittest.TestCase):
                           '_a_valid_name': 'AG', '_a_valid_name$': 'AF$'},
                          a_dictionary["variables"])
 
+
 if __name__ == '__main__':
     unittest.main()
