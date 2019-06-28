@@ -205,7 +205,7 @@ def present_script_title():
     print("")
     print("")
     print("CBPP - Color Basic Pre-Processor VERSION 0.1")
-    print("Copyright(C) 2019 by Andre Ballista - www.oddpathsconsulting.co.uk")
+    print("by Andre Ballista")
 
 
 def present_script_settings(a_configuration, the_arguments):
