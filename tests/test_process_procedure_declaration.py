@@ -70,8 +70,8 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         file_handler.write("DECLARE a_name_1b )x(                                                                     " + glb_new_line_symbol)
         file_handler.write("DECLARE a_name_2 (x)                                                                      " + glb_new_line_symbol)
         file_handler.write("DECLARE a_name_3 ( x )                                                                    " + glb_new_line_symbol)
-        file_handler.write("DECLARE a_name 4(a)                                                                        " + glb_new_line_symbol)
-        file_handler.write("DECLARE a_name 5 (a)                                                                       " + glb_new_line_symbol)
+        file_handler.write("DECLARE a_name 4(a)                                                                       " + glb_new_line_symbol)
+        file_handler.write("DECLARE a_name 5 (a)                                                                      " + glb_new_line_symbol)
         file_handler.write("DECLARE a_name6(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)                                  " + glb_new_line_symbol)
         file_handler.write("DECLARE a_name7(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)                             " + glb_new_line_symbol)
         file_handler.write("DECLARE a_name7               4 (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)            " + glb_new_line_symbol)
@@ -83,7 +83,7 @@ class TestProcessProcedureDeclaration(unittest.TestCase):
         self.assertEqual({}, a_dictionary["declares"])
 
     def test_scenario_4(self):
-        # duplicated procedure declaration
+        # duplicated procedure declaration - uniqueness
         file_handler = open(glb_input_filename, "w")
         file_handler.write("DECLARE z(a):                                                                              " + glb_new_line_symbol)
         file_handler.write("DECLARE z():                                                                              " + glb_new_line_symbol)

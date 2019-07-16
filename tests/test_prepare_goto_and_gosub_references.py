@@ -1,6 +1,6 @@
 import unittest
 from color_basic_preprocessor import prepare_goto_and_gosub_references, initialise_a_reference_dictionary
-from color_basic_preprocessor import glb_new_line_symbol
+from color_basic_preprocessor import glb_new_line_symbol, glb_error_gotogosub_duplicate_reference
 import os
 
 glb_input_filename = "in_prepare_goto_and_gosub_references.txt"
@@ -73,11 +73,26 @@ class TestPrepareGotoAndGosubReferences(unittest.TestCase):
         file_handler.close()
         a_reference_dictionary = initialise_a_reference_dictionary()
         error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
+        print(a_reference_dictionary)
         self.assertEqual(a_reference_dictionary["gotogosub"],
-                         {'_correct:': {'file_line': '18'}, '_correct1:': {'file_line': '19'},
-                          '_correct2:': {'file_line': '20'}, '_correct3:': {'file_line': '21'},
-                          '_correct4:': {'file_line': '22'}, '_correct5:': {'file_line': '23'}})
+                         {'_correct': {'file_line': '18'}, '_correct1': {'file_line': '19'},
+                          '_correct2': {'file_line': '20'}, '_correct3': {'file_line': '21'},
+                          '_correct4': {'file_line': '22'}, '_correct5': {'file_line': '23'}})
         self.assertEqual(error_codes_list, [10])
+
+    def test_scenario_2(self):
+        # scenario - duplicated reference name - uniqueness
+        file_handler = open(glb_input_filename, "w")
+        file_handler.write("_correct1:                                               " + glb_new_line_symbol)
+        file_handler.write("some code                                                " + glb_new_line_symbol)
+        file_handler.write("_correct1:                                               " + glb_new_line_symbol)
+        file_handler.write("some code                                                " + glb_new_line_symbol)
+        file_handler.close()
+        a_reference_dictionary = initialise_a_reference_dictionary()
+        error_codes_list = prepare_goto_and_gosub_references(glb_input_filename, glb_output_filename, a_reference_dictionary)
+        self.assertEqual(a_reference_dictionary["gotogosub"],
+                         {'_correct1': {'file_line': "1"}})
+        self.assertEqual(error_codes_list, [glb_error_gotogosub_duplicate_reference])
 
 
 if __name__ == '__main__':

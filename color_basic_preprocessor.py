@@ -76,7 +76,7 @@ glb_error_messages = ["no errors found",
                       "duplicate procedure name found.",
                       "procedure name contains invalid character.",
                       "syntax error on procedure declaration",
-                      "",
+                      "duplicate identifier found.",
                       "duplicate GOTO/GOSUB reference name found.",
                       "",
                       "",
@@ -136,6 +136,9 @@ glb_error_declare_parameters_exceeded = 5
 glb_error_declare_duplicate_definition = 6
 glb_error_declare_contains_invalid_character = 7
 glb_error_declare_invalid_syntax = 8
+
+# Identifiers related error codes
+glb_error_declare_duplicate_identifier = 9
 
 # GOTO / GOSUB definition related error codes
 glb_error_gotogosub_duplicate_reference = 10
@@ -278,6 +281,13 @@ def strip_comment_from_line(a_line):
     return a_line_split
 
 
+def exists_in_reference_dictionary(a_name, a_dictionary):
+    if a_name in a_dictionary["declares"].keys() or a_name in a_dictionary["variables"].keys() or a_name in a_dictionary["gotogosub"].keys():
+        return True
+    else:
+        return False
+
+
 def remove_empty_lines(an_input_file_name, an_output_file_name):
     error_list = list()
     output_file_handler = open(an_output_file_name, "w")
@@ -341,7 +351,11 @@ def process_procedure_declaration(an_input_file_name, an_output_file_name, a_ref
                         a_parameters_list = result.group(4).strip().split(glb_comma_symbol)
                     a_sufix = result.group(5)
                     if a_procedure_name in a_reference_dictionary["declares"].keys():
+                        # scenario - a procedure name must be unique across all procedure names
                         error_list = handle_syntax_error(glb_error_declare_duplicate_definition, line_number, a_line, error_list, output_file_handler)
+                    elif exists_in_reference_dictionary(a_procedure_name, a_reference_dictionary):
+                        # scenario - a procedure identifier must be unique across all identifiers used in the source code
+                        error_list = handle_syntax_error(glb_error_declare_duplicate_identifier, line_number, a_line, error_list, output_file_handler)
                     else:
                         if len(a_parameters_list) > glb_max_available_parameters_for_procedures:
                             error_list = handle_syntax_error(glb_error_declare_parameters_exceeded, line_number, a_line, error_list, output_file_handler)
@@ -460,8 +474,11 @@ def prepare_variables_references(an_input_file_name, an_output_file_name, a_refe
                         # scenario - a variable name must be alphanumeric
                         error_list = handle_syntax_error(glb_error_variable_numeric_named, line_number, a_line, error_list, output_file_handler)
                     elif a_variable_name in a_reference_dictionary["variables"].keys():
-                        # scenario - a variable name must be unique
+                        # scenario - a variable name must be unique across all variable names
                         error_list = handle_syntax_error(glb_error_variable_duplicate_reference, line_number, a_line, error_list, output_file_handler)
+                    elif exists_in_reference_dictionary(a_variable_name, a_reference_dictionary):
+                        # scenario - a variable identifier must be unique across all identifiers used in the source code
+                        error_list = handle_syntax_error(glb_error_declare_duplicate_identifier, line_number, a_line, error_list, output_file_handler)
                     elif a_variable_name[-1] == "$":
                         if not a_string_variables_list:
                             # scenario - number of variables declared exceeds the limit
@@ -501,12 +518,15 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
             a_line_strip = strip_comment_from_line(a_line)
             if not a_line_strip == glb_empty_symbol:
                 # scenario - the line is not empty
-                result = re.search("(^\s*)(_[a-zA-Z_0-9]+:)", a_line_strip)
+                result = re.search("(^\s*)(_[a-zA-Z_0-9]+)(:)", a_line_strip)
                 if result is not None:
                     a_reference_name = result.group(2).strip()
                     if a_reference_name in a_reference_dictionary["gotogosub"].keys():
-                        # scenario - the potential reference has been previously used
+                        # scenario - a reference name must be unique across all reference names
                         error_list = handle_syntax_error(glb_error_gotogosub_duplicate_reference, line_number, a_line, error_list, output_file_handler)
+                    elif exists_in_reference_dictionary(a_reference_name, a_reference_dictionary):
+                        # scenario - a reference identifier must be unique across all identifiers used in the source code
+                        error_list = handle_syntax_error(glb_error_declare_duplicate_identifier, line_number, a_line, error_list, output_file_handler)
                     else:
                         a_reference_dictionary["gotogosub"][a_reference_name] = {"file_line": str(line_number)}
                         a_line = glb_comment_symbol + a_line
@@ -568,11 +588,11 @@ def resolve_goto_references(an_input_file_name, an_output_file_name, a_reference
                     # scenario - multiple GOTOs on the same line
                     error_list = handle_syntax_error(glb_error_goto_multiple_found, line_number, a_line, error_list, output_file_handler)
                 else:
-                    result = re.search("(GOTO)\s+(\_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
+                    result = re.search("(GOTO)\s+(_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
                     if result is not None:
-                        a_reference_name = result.group(2).strip() + result.group(3).strip() + result.group(4).strip()
+                        a_reference_name = result.group(2).strip() + result.group(3).strip()
                         if a_reference_name in a_reference_dictionary["gotogosub"].keys():
-                            a_line = a_line.replace(a_reference_name, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]), 1)
+                            a_line = a_line.replace(a_reference_name + result.group(4).strip(), line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]), 1)
                         else:
                             # scenario - target is not empty but has not been declared previously
                             error_list = handle_syntax_error(glb_error_goto_unknown_reference, line_number, a_line, error_list, output_file_handler)
@@ -596,9 +616,9 @@ def resolve_gosub_references(an_input_file_name, an_output_file_name, a_referenc
                 result = re.finditer("(GOSUB)\s+(\_)([a-zA-Z0-9_]+)(\:)", a_line_strip)
                 # TODO : DO I need to handle the scenario where the for is not executed? See the prepare_variable_references_code.
                 for a_reference in result:
-                    a_reference_name = a_reference.group(2).strip() + a_reference.group(3).strip() + a_reference.group(4).strip()
+                    a_reference_name = a_reference.group(2).strip() + a_reference.group(3).strip()
                     if a_reference_name in a_reference_dictionary["gotogosub"].keys():
-                        a_line = a_line.replace(a_reference_name, line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]))
+                        a_line = a_line.replace(a_reference_name + a_reference.group(4).strip(), line_number_from_file_line(a_reference_dictionary["gotogosub"][a_reference_name]["file_line"]))
                     else:
                         # scenario - target is not empty but has not been declared previously
                         error_list = handle_syntax_error(glb_error_gosub_unknown_reference, line_number, a_line, error_list, output_file_handler)
