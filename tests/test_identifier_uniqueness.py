@@ -50,7 +50,6 @@ class TestIdentifierUniqueness(unittest.TestCase):
         self.assertEqual(an_error_list, [glb_error_declare_duplicate_identifier])
         self.assertEqual({}, a_dictionary["gotogosub"])
 
-
     def test_scenario_2(self):
         # variable identifier is defined first
         file_handler = open(glb_input_filename, "w")
@@ -99,6 +98,7 @@ class TestIdentifierUniqueness(unittest.TestCase):
         self.assertEqual(an_error_list, [glb_error_declare_duplicate_identifier])
         self.assertEqual({}, a_dictionary["declares"])
         #
+
 
 if __name__ == '__main__':
     unittest.main()
