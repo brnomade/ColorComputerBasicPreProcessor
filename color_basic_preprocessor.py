@@ -2,6 +2,7 @@ import argparse
 import configparser
 import logging
 import os
+import shutil
 import subprocess
 import string
 import itertools
@@ -518,27 +519,38 @@ def prepare_goto_and_gosub_references(an_input_file_name, an_output_file_name, a
 
 def resolve_variables_references(an_input_file_name, an_output_file_name, a_reference_dictionary):
     error_list = list()
+    replaced_counter = 0
     #
-    output_file_handler = open(an_output_file_name, "w")
-    #
-    joined_variables = '|'.join(map(re.escape, a_reference_dictionary["variables"]))
-    rc = re.compile("(\s|=|:|\+|\*|\-|\/|\)|\(|^)(" + joined_variables + ")(\s|=|:|\+|\*|\-|\/|\)|\,|\n)")
-    #
-    with open(an_input_file_name, "r") as input_file_handler:
-        for a_line in input_file_handler:
-            # scenario - identify if the keyword is located to the left of the comment symbol.
-            position_of_comment_symbol = a_line.find(glb_comment_symbol)
-            a_match = rc.search(a_line)
-            while a_match is not None:
-                if position_of_comment_symbol == -1 or (a_match.end(2) < position_of_comment_symbol):
-                    a_line = "".join((a_line[:a_match.start(2)], a_reference_dictionary["variables"][a_match.group(2)], a_line[a_match.end(2):]))
-                    a_match = rc.search(a_line)
-                else:
-                    a_match = None
-            output_file_handler.write(a_line)
-    output_file_handler.close()
+    if a_reference_dictionary["variables"]:
+        output_file_handler = open(an_output_file_name, "w")
+        #
+        joined_variables = '|'.join(map(re.escape, a_reference_dictionary["variables"]))
+        rc = re.compile("\\b(" + joined_variables + ")\\b")
+        #
+        with open(an_input_file_name, "r") as input_file_handler:
+            for a_line in input_file_handler:
+                # scenario - identify if the keyword is located to the left of the comment symbol.
+                a_line = a_line.strip()
+                position_of_comment_symbol = a_line.find(glb_comment_symbol)
+                a_match = rc.search(a_line)
+                while a_match is not None:
+                    a_variable = a_match.group(1).strip()
+                    if position_of_comment_symbol == -1 or (a_match.end(1) < position_of_comment_symbol):
+                        a_line = "".join((a_line[:a_match.start(1)], a_reference_dictionary["variables"][a_match.group(1)], a_line[a_match.end(1):]))
+                        replaced_counter = replaced_counter + 1
+                        a_match = rc.search(a_line)
+                    else:
+                        # scenario - the variable was found after the comment marker
+                        a_match = None
+                a_line = a_line + glb_new_line_symbol
+                output_file_handler.write(a_line)
+        output_file_handler.close()
+    else:
+        # scenario - variables dictionary is empty, no variables to be replaced
+        shutil.copyfile(an_input_file_name, an_output_file_name)
     if len(error_list) == 0:
         error_list.append(glb_no_error_code)
+        error_list.append(replaced_counter)
     return error_list
 
 
