@@ -15,5 +15,6 @@ script:
   - python -m unittest tests/test_resolve_gosub_references.py
   - python -m unittest tests/test_resolve_goto_references.py
   - python -m unittest tests/test_prepare_variables_references.py
+  - python -m unittest tests/test_resolve_variables_references.py
 after_success:
   - coveralls
