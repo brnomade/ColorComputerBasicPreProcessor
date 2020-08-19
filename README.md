@@ -6,3 +6,4 @@ A pre-processor implementation for the Tandy Color Computer Color Basic.
 [![Coverage Status](https://coveralls.io/repos/github/brnomade/ColorComputerBasicPreProcessor/badge.svg)](https://coveralls.io/github/brnomade/ColorComputerBasicPreProcessor)
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/4af59102b0bd679f76b0/maintainability)](https://codeclimate.com/github/brnomade/ColorComputerBasicPreProcessor/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/4af59102b0bd679f76b0/test_coverage)](https://codeclimate.com/github/brnomade/ColorComputerBasicPreProcessor/test_coverage)
